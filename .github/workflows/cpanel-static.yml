@@ -1,0 +1,52 @@
+name: Build cPanel static runtime
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: popforge-cpanel-runtime
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      NEXT_PUBLIC_SITE_URL: https://popforge.jpmassagem.pt
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Validate
+        run: |
+          npm run typecheck
+          npm run lint
+      - name: Build static storefront
+        run: npm run build
+      - name: Publish deployable branch
+        shell: bash
+        run: |
+          rm -rf /tmp/popforge-runtime
+          mkdir -p /tmp/popforge-runtime
+          cp -a out/. /tmp/popforge-runtime/
+          cp .cpanel.yml /tmp/popforge-runtime/.cpanel.yml
+          cd /tmp/popforge-runtime
+          git init
+          git checkout -b cpanel-runtime
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Build cPanel runtime from ${GITHUB_SHA}"
+          git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push --force origin cpanel-runtime
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

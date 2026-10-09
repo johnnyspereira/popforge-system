@@ -19,6 +19,12 @@ npm run dev
 
 Abra `http://localhost:3000` e `http://localhost:3000/dashboard`.
 
+## Publicação no cPanel
+
+Cada push para `main` valida e gera a branch `cpanel-runtime`. No cPanel, ligue
+essa branch ao subdomínio `popforge.jpmassagem.pt`; o conteúdo é estático e não
+partilha processos, diretórios ou configuração com a JP Massagem.
+
 ## Próximas integrações
 
 1. Supabase/PostgreSQL e autenticação
