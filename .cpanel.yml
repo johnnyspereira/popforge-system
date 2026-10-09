@@ -1,0 +1,7 @@
+---
+deployment:
+  tasks:
+    # Configure the POPForge subdomain document root to this directory.
+    # This path is isolated from every JP Massagem application directory.
+    - /bin/mkdir -p /home/jpmassag/popforge.jpmassagem.pt
+    - /bin/cp -a ./* /home/jpmassag/popforge.jpmassagem.pt/

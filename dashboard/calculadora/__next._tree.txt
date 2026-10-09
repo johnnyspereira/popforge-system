@@ -1,0 +1,4 @@
+:HL["/_next/static/chunks/0ry9yoh.0vf57.css","style"]
+:HL["/_next/static/chunks/16s2zi2rf3u.c.css","style"]
+:HL["/_next/static/chunks/08b91iop34p7-.css","style"]
+0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"dashboard","param":null,"prefetchHints":0,"slots":{"children":{"name":"calculadora","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}}}},"staleTime":300,"buildId":"gLPGoW-j_tHl9IIkFX6SM"}
