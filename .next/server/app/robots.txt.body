@@ -1,0 +1,10 @@
+User-Agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /portal
+Disallow: /login
+Disallow: /api
+Disallow: /anamnese
+Disallow: /voucher
+
+Sitemap: https://popforge.jpmassagem.pt/sitemap.xml

@@ -1,0 +1,51 @@
+{
+  "version": 3,
+  "middleware": {},
+  "functions": {
+    "/icon/route": {
+      "files": [
+        "server/middleware-build-manifest.js",
+        "server/middleware-react-loadable-manifest.js",
+        "server/next-font-manifest.js",
+        "server/interception-route-rewrite-manifest.js",
+        "required-server-files.js",
+        "server/edge-instrumentation.js",
+        "server/edge-runtime-webpack.js",
+        "server/app/icon/route.js"
+      ],
+      "entrypoint": "server/app/icon/route.js",
+      "name": "app/icon/route",
+      "page": "/icon/route",
+      "matchers": [
+        {
+          "regexp": "^/icon$",
+          "originalSource": "/icon"
+        }
+      ],
+      "wasm": [
+        {
+          "name": "wasm_a5d4d0ae9bf0a18b666f06b1864089d3fe4057cc",
+          "filePath": "server/edge-chunks/wasm_a5d4d0ae9bf0a18b666f06b1864089d3fe4057cc.wasm"
+        },
+        {
+          "name": "wasm_77d9faebf7af9e421806970ce10a58e9d83116d7",
+          "filePath": "server/edge-chunks/wasm_77d9faebf7af9e421806970ce10a58e9d83116d7.wasm"
+        }
+      ],
+      "assets": [
+        {
+          "name": "Geist-Regular.4548d4b15b6b765e.ttf",
+          "filePath": "server/edge-chunks/asset_Geist-Regular.4548d4b15b6b765e.ttf"
+        }
+      ],
+      "env": {
+        "__NEXT_BUILD_ID": "FDHt1FJLfkNekWHWUXihp",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "Quyt05tcnAw6DDhjlGPeDZvBjoVvgaXtNFen97lUmDk=",
+        "__NEXT_PREVIEW_MODE_ID": "2320f1e12eba0ac64e7aaff6a1f12041",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "f4f9d20b1c4df62d781a15b760e8e056ebc5419821768ebfe3512dd589237901",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "ba2ea2b7eebf605dadfcf9f83edcc904a29d7f21c4cf99c7221510616f5a5193"
+      }
+    }
+  },
+  "sortedMiddleware": []
+}
