@@ -3,7 +3,7 @@
 ## Princípios
 
 - Repositório, base de dados, variáveis, armazenamento e deploy independentes.
-- Reaproveitar padrões comprovados do CRM, nunca dados ou credenciais da JP Massagem.
+- Reaproveitar padrões comprovados do CRM, nunca dados ou credenciais da POPForge.
 - Catálogo e checkout orientados a produtos prontos e encomendas personalizadas.
 
 ## Fase 1 — Fundação

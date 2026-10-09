@@ -1,0 +1,76 @@
+import Link from 'next/link';
+import { CalendarClock, ChevronRight, CircleAlert, Repeat2, UserRound } from 'lucide-react';
+
+import { Badge } from '@/components/ui/badge';
+import type { PortalPendingConfirmationItem } from '@/lib/dashboard/types';
+import { Skeleton } from './skeleton';
+
+/** The legacy name remains for the existing dashboard hook. This is now the
+ * operational list of every upcoming appointment created in the Portal. */
+export function PortalPendingConfirmationsCard({
+  appointments,
+  loading,
+  error = false,
+}: {
+  appointments: PortalPendingConfirmationItem[] | null;
+  loading: boolean;
+  error?: boolean;
+}) {
+  if (loading) return <Skeleton className="h-56 w-full rounded-xl" />;
+  if (error) {
+    return (
+      <div className="rounded-xl border border-amber-300/70 bg-amber-50/60 px-4 py-5 text-sm dark:bg-amber-950/20">
+        <p className="font-medium">NÃ£o foi possÃ­vel carregar as marcaÃ§Ãµes online.</p>
+        <Link href="/agenda" className="text-primary mt-2 inline-flex items-center gap-1 text-xs font-semibold hover:underline">
+          Consultar agenda <ChevronRight className="size-3" />
+        </Link>
+      </div>
+    );
+  }
+  if (!appointments?.length) return null;
+
+  return (
+    <section className="overflow-hidden rounded-xl border border-violet-300/70 bg-card shadow-sm">
+      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-violet-200/70 bg-gradient-to-r from-violet-50 to-card px-4 py-3 dark:border-violet-900/50 dark:from-violet-950/20">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-violet-500/15 text-violet-700 dark:text-violet-300">
+            <CircleAlert className="size-4" />
+          </span>
+          <div>
+            <h2 className="text-sm font-semibold">Marcações do Portal 360</h2>
+            <p className="text-muted-foreground mt-0.5 hidden text-xs sm:block">
+              Todas as próximas reservas feitas pelos clientes, por ordem de data.
+            </p>
+          </div>
+        </div>
+        <Badge variant="secondary" className="bg-violet-100 text-violet-900 dark:bg-violet-950 dark:text-violet-200">
+          {appointments.length} marcaç{appointments.length === 1 ? 'ão' : 'ões'}
+        </Badge>
+      </header>
+      <div className="max-h-[24rem] divide-y overflow-y-auto">
+        {appointments.map((appointment) => (
+          <Link key={appointment.id} href={appointment.href} className="hover:bg-muted/50 flex items-center gap-2.5 px-4 py-2.5 transition-colors">
+            <span className={appointment.kind === 'reschedule' ? 'text-violet-600' : 'text-primary'}>
+              {appointment.kind === 'reschedule' ? <Repeat2 className="size-4" /> : <CalendarClock className="size-4" />}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold">{appointment.contactName}</p>
+              <p className="text-muted-foreground truncate text-xs">
+                {appointment.serviceName} · {new Date(appointment.scheduledStart).toLocaleString('pt-PT', { dateStyle: 'short', timeStyle: 'short' })}
+              </p>
+              {appointment.kind === 'reschedule' && appointment.requestedStart ? (
+                <p className="mt-0.5 flex items-center gap-1 text-[11px] font-medium text-violet-700 dark:text-violet-300">
+                  <Repeat2 className="size-3" /> Alteração pedida para {new Date(appointment.requestedStart).toLocaleString('pt-PT', { dateStyle: 'short', timeStyle: 'short' })}
+                </p>
+              ) : (
+                <p className="mt-0.5 text-[11px] text-muted-foreground">Reserva criada pelo Portal 360</p>
+              )}
+              <p className="text-muted-foreground mt-0.5 flex items-center gap-1 text-[11px]"><UserRound className="size-3" /> {appointment.professionalName}</p>
+            </div>
+            <ChevronRight className="text-muted-foreground size-4" />
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}

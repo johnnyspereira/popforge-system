@@ -1,0 +1,252 @@
+name: Build cPanel runtime
+
+on:
+  # Every approved source change gets a matching deployable runtime. This
+  # only updates the Git branch; cPanel deployment/restart remains explicit.
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Only the newest source revision should reach the shared runtime branch.
+# Superseded builds are cancelled so cPanel never receives stale intermediate
+# versions after a sequence of urgent fixes.
+concurrency:
+  group: popforge-cpanel-runtime-publish
+  cancel-in-progress: true
+
+jobs:
+  build-runtime:
+    runs-on: ubuntu-latest
+    # A compilação completa pode demorar alguns minutos. Este limite evita
+    # deixar uma versão bloqueada indefinidamente e impede que o cPanel fique
+    # à espera de um runtime que nunca será publicado.
+    timeout-minutes: 30
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      PUPPETEER_SKIP_DOWNLOAD: 'true'
+      # The cPanel app delegates WhatsApp QR to the local/remote worker.
+      # Building as polling_worker makes Next include the local Chromium
+      # transport, whose whatsapp-web.js dependency is intentionally absent
+      # from the shared-hosting runtime.
+      WHATSAPP_MODE: remote_worker
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      NEXT_PUBLIC_APP_URL: https://popforge.jpmassagem.pt
+      NEXT_PUBLIC_SITE_URL: https://popforge.jpmassagem.pt
+      APP_URL: https://popforge.jpmassagem.pt
+      NEXT_PUBLIC_APP_LOCALE: pt
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          # Keep the publishing runner on the same supported Node line that
+          # validates the application locally. This avoids a different Next
+          # compiler/runtime combination building the cPanel artifact.
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies
+        # The runtime branch must be reproducible. `npm install` can resolve
+        # a newer transitive dependency on the GitHub runner than on the
+        # machine where the change was verified.
+        run: npm ci --include=dev
+
+      - name: Check Linux CSS/runtime resolution
+        run: |
+          node -e "for (const m of ['tailwindcss','@tailwindcss/postcss','lightningcss']) { console.log(m + ' => ' + require.resolve(m)) }"
+          node -e "const fs=require('fs'); for (const p of ['node_modules/shadcn/dist/tailwind.css','node_modules/tw-animate-css/dist/tw-animate.css']) { if (!fs.existsSync(p)) { throw new Error(p + ' not found') } console.log(p + ' OK') }"
+
+      - name: Build Next.js standalone runtime
+        shell: bash
+        run: |
+          # Preserve the useful final part of a failed Next build as a GitHub
+          # annotation. The normal Actions log endpoint is intentionally not
+          # available to the deployment monitor, which otherwise only sees
+          # the unhelpful generic "exit code 1".
+          set +e
+          npm run build:cpanel 2>&1 | tee /tmp/cpanel-next-build.log
+          build_status=${PIPESTATUS[0]}
+          set -e
+          if [ "$build_status" -ne 0 ]; then
+            summary=$(tail -n 35 /tmp/cpanel-next-build.log | tr '\n' ' ' | sed -e 's/%/%25/g' -e 's/\r/%0D/g' -e 's/\n/%0A/g')
+            echo "::error title=Next cPanel build failure::$summary"
+            exit "$build_status"
+          fi
+        env:
+          NODE_ENV: production
+
+      - name: Assemble cPanel runtime branch
+        shell: bash
+        run: |
+          rm -rf cpanel-runtime
+          rm -rf cpanel-previous-static
+          git fetch origin cpanel-runtime:refs/remotes/origin/cpanel-runtime
+          git worktree add --detach cpanel-runtime origin/cpanel-runtime
+          # Preserve assets from the two previous runtimes. Passenger may keep
+          # an older server process alive briefly after Git updates the working
+          # tree; without these hashed files its HTML renders without CSS/JS.
+          mkdir -p cpanel-previous-static
+          git -C cpanel-runtime archive HEAD .next/static 2>/dev/null | tar -x -C cpanel-previous-static || true
+          git -C cpanel-runtime archive HEAD^ .next/static 2>/dev/null | tar -x -C cpanel-previous-static || true
+          find cpanel-runtime -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          mkdir -p cpanel-runtime/.next
+          # CloudLinux Node.js Selector reserves node_modules for the virtual
+          # environment symlink. Keep the prebuilt Next output, but let cPanel
+          # install runtime dependencies into that environment.
+          rsync -a --exclude='node_modules/' .next/standalone/ cpanel-runtime/
+          if [ -d cpanel-previous-static/.next/static ]; then
+            cp -a cpanel-previous-static/.next/static cpanel-runtime/.next/
+          fi
+          rsync -a .next/static/ cpanel-runtime/.next/static/
+          # Some cPanel Git deployments leave newly tracked files inside the
+          # hidden .next directory out of the checked-out application tree.
+          # Ship a visible recovery copy; server.js restores it before Next
+          # starts, so HTML and its hashed CSS/JS always come from one build.
+          mkdir -p cpanel-runtime/runtime-static
+          rsync -a cpanel-runtime/.next/static/ cpanel-runtime/runtime-static/
+          cp -a public cpanel-runtime/public
+          cp .cpanel.yml .gitignore cpanel-runtime/
+          mkdir -p cpanel-runtime/mysql cpanel-runtime/scripts
+          cp -a mysql/migrations cpanel-runtime/mysql/migrations
+          cp scripts/mysql-migrate.mjs cpanel-runtime/scripts/mysql-migrate.mjs
+          cp package-lock.json cpanel-runtime/package-lock.json
+          node <<'EOF'
+          const fs = require('node:fs');
+          const source = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          const dependencies = { ...source.dependencies };
+          // The browser-based WhatsApp client runs exclusively on the local
+          // worker. Installing it on shared cPanel also pulls Puppeteer and can
+          // exceed the hosting memory limit during npm install.
+          delete dependencies['whatsapp-web.js'];
+          const runtime = {
+            name: source.name,
+            version: source.version,
+            private: true,
+            engines: source.engines,
+            scripts: {
+              start: 'node server.js',
+            },
+            dependencies,
+            overrides: source.overrides,
+          };
+          fs.writeFileSync(
+            'cpanel-runtime/package.json',
+            `${JSON.stringify(runtime, null, 2)}\n`,
+          );
+          EOF
+          (
+            cd cpanel-runtime
+            npm install --package-lock-only --omit=dev --ignore-scripts
+          )
+          if grep -q 'node_modules/puppeteer' cpanel-runtime/package-lock.json; then
+            echo 'Runtime lockfile must not contain Puppeteer.' >&2
+            exit 1
+          fi
+          if find cpanel-runtime -type d -name node_modules -print -quit | grep -q .; then
+            echo 'Runtime must not contain a node_modules directory.' >&2
+            exit 1
+          fi
+          mv cpanel-runtime/server.js cpanel-runtime/next-server.js
+          cat > cpanel-runtime/server.js <<'EOF'
+          const { execFileSync } = require('node:child_process');
+          const fs = require('node:fs');
+          const path = require('node:path');
+
+          // Some Node.js Selector installations display application variables
+          // in cPanel but fail to pass them to Passenger after a deployment.
+          // A local .env (never committed) is an explicit, secure fallback.
+          // Existing process variables always take precedence.
+          const envFile = path.join(__dirname, '.env');
+          try {
+            if (fs.existsSync(envFile)) {
+              for (const rawLine of fs.readFileSync(envFile, 'utf8').split(/\r?\n/)) {
+                const line = rawLine.trim();
+                if (!line || line.startsWith('#')) continue;
+                const separator = line.indexOf('=');
+                if (separator < 1) continue;
+                const key = line.slice(0, separator).trim();
+                let value = line.slice(separator + 1).trim();
+                if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+                  value = value.slice(1, -1);
+                }
+                if (key && process.env[key] === undefined) process.env[key] = value;
+              }
+              console.log('cPanel: local environment fallback loaded.');
+            }
+          } catch (error) {
+            console.error('cPanel: unable to load local environment fallback.', error);
+          }
+
+          const bundledStatic = path.join(__dirname, 'runtime-static');
+          const nextStatic = path.join(__dirname, '.next', 'static');
+
+          try {
+            if (fs.existsSync(bundledStatic)) {
+              fs.mkdirSync(nextStatic, { recursive: true });
+              fs.cpSync(bundledStatic, nextStatic, { recursive: true, force: true });
+              console.log('cPanel: Next static assets restored.');
+            }
+          } catch (error) {
+            console.error('cPanel: failed to restore Next static assets.', error);
+          }
+
+          try {
+            console.log('cPanel: applying pending MySQL migrations...');
+            execFileSync(process.execPath, [path.join(__dirname, 'scripts/mysql-migrate.mjs')], {
+              cwd: __dirname,
+              env: process.env,
+              stdio: 'inherit',
+            });
+           } catch (error) {
+             // Do not hide the reason: an application started against an old
+             // schema only fails later with vague "Table is not available"
+             // messages in the UI. The cPanel Node log is the actionable
+             // source when credentials or SQL compatibility need attention.
+             console.error('cPanel: MySQL migration failed. Starting the application with the existing schema.', error);
+           }
+
+          require('./next-server.js');
+          EOF
+          cat > cpanel-runtime/README.md <<'EOF'
+          # POPForge Commerce cPanel runtime
+
+          Esta branch e gerada automaticamente pelo GitHub Actions.
+
+          No cPanel:
+          - Branch: cpanel-runtime
+          - Application startup file: server.js
+          - Execute `Run NPM Install` uma vez apos criar a aplicacao
+          - Nao execute `npm run build`
+          - As migrations MySQL pendentes sao aplicadas automaticamente no arranque
+          - Configure as variaveis de ambiente no Setup Node.js App
+          - Use Restart Application apos cada pull
+          EOF
+          rm -rf cpanel-previous-static
+
+      - name: Publish cPanel runtime branch
+        shell: bash
+        run: |
+          cd cpanel-runtime
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # The source repository intentionally ignores /.next, but this
+          # generated branch *is* the deployable Next runtime. Force-add it so
+          # every newly hashed route chunk and stylesheet is published. Without
+          # this, Git keeps only assets already tracked by an older runtime and
+          # production HTML starts returning 404 for its new CSS/JS files.
+          git add -f .next
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Runtime output is unchanged; nothing to publish."
+            exit 0
+          fi
+          git commit -m "Build cPanel runtime from ${GITHUB_SHA}"
+          git push origin HEAD:cpanel-runtime

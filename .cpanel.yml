@@ -1,7 +1,7 @@
 ---
 deployment:
   tasks:
-    # Configure the POPForge subdomain document root to this directory.
-    # This path is isolated from every JP Massagem application directory.
-    - /bin/mkdir -p /home/jpmassag/popforge.jpmassagem.pt
-    - /bin/cp -a ./* /home/jpmassag/popforge.jpmassagem.pt/
+    # A branch cpanel-runtime contém a aplicação Node completa. O deploy
+    # apenas sinaliza o Passenger depois de atualizar o repositório.
+    - /bin/mkdir -p /home/jpmassag/repositories/popforge-system/tmp
+    - /usr/bin/touch /home/jpmassag/repositories/popforge-system/tmp/restart.txt

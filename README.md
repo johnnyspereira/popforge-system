@@ -1,37 +1,38 @@
-# POPForge System
+# POPForge Commerce
 
-Projeto independente de e-commerce e operação de impressão 3D da POPForge.
+Plataforma independente para a loja POPForge, construída sobre a base técnica do CRM e adaptada para comércio eletrónico e produção 3D.
 
-## Estado atual
+## Módulos
 
-- Montra pública responsiva com catálogo e carrinho demonstrativo
-- Dashboard inicial em `/dashboard`
-- Modelo inicial de dados em `database/schema.sql`
-- Metadados preparados para `https://popforge.jpmassagem.pt`
-- Sem dados, segredos ou dependências operacionais da JP Massagem
+- CRM de clientes, conversas, WhatsApp, tarefas e automações
+- Loja e produção em `/commerce`
+- Calculadora de preços 3D em `/commerce/calculadora`
+- Catálogo, variantes, stock, encomendas e fila de produção no esquema MySQL
+- Financeiro, campanhas, portal do cliente, relatórios e gestor do site público
 
 ## Desenvolvimento
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
-Abra `http://localhost:3000` e `http://localhost:3000/dashboard`.
+Copie `.env.example` para `.env.local`, configure uma base MySQL exclusiva da POPForge e execute:
+
+```bash
+npm run db:migrate:mysql
+npm run typecheck
+npm run lint
+npm run build:cpanel
+```
 
 ## Publicação no cPanel
 
-Cada push para `main` valida e gera a branch `cpanel-runtime`. No cPanel, ligue
-essa branch ao subdomínio `popforge.jpmassagem.pt`; o conteúdo é estático e não
-partilha processos, diretórios ou configuração com a JP Massagem.
+O GitHub Actions gera a branch `cpanel-runtime` com o runtime standalone. No cPanel, a aplicação Node deve usar:
 
-## Próximas integrações
+- repositório: `/home/jpmassag/repositories/popforge-system`
+- URL: `https://popforge.jpmassagem.pt`
+- ficheiro de arranque: `server.js`
+- versão Node: 22 ou superior
 
-1. Supabase/PostgreSQL e autenticação
-2. Catálogo administrativo real
-3. Stripe Checkout e webhooks
-4. Encomendas e portal do cliente
-5. Produção 3D, inventário e notificações WhatsApp
-6. Configuração DNS/deploy de `popforge.jpmassagem.pt`
-
-Consulte `docs/ROADMAP.md` para a arquitetura e as fases.
+O projeto não utiliza a base de dados nem os diretórios da JP Massagem. Credenciais e dados operacionais devem ser próprios da POPForge.
