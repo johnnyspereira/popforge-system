@@ -1,0 +1,14 @@
+import Link from "next/link";
+import { ArrowLeft, Box, CircleDollarSign, Clock3, PackageCheck, ShoppingCart, Sparkles } from "lucide-react";
+import "./dashboard.css";
+
+const orders = [
+  ["#PF-1028", "Mariana Costa", "Dragão Articulado", "Em produção", "24,90 €"],
+  ["#PF-1027", "Tiago Mendes", "Suporte Headset", "A preparar", "34,50 €"],
+  ["#PF-1026", "Sofia Martins", "Projeto personalizado", "Orçamento", "68,00 €"],
+  ["#PF-1025", "Rui Almeida", "Luminária Lunar", "Enviado", "39,90 €"],
+];
+
+export default function Dashboard() {
+  return <div className="admin"><aside><div className="admin-brand"><span>POP</span>FORGE</div><nav><b>Visão geral</b><span>Encomendas</span><span>Produtos</span><span>Produção 3D</span><span>Inventário</span><span>Clientes</span><span>Marketing</span><span>Financeiro</span></nav><Link href="/"><ArrowLeft/> Voltar à loja</Link></aside><main><header><div><small>SEXTA-FEIRA, 9 OUTUBRO</small><h1>Bom dia, Johnny.</h1><p>A POPForge está a ganhar forma.</p></div><button><Sparkles/> Nova encomenda</button></header><section className="stats"><div><CircleDollarSign/><span>Vendas este mês<small>+18,4% vs. anterior</small></span><strong>2 847 €</strong></div><div><ShoppingCart/><span>Encomendas<small>8 aguardam ação</small></span><strong>46</strong></div><div><Clock3/><span>Em produção<small>31h estimadas</small></span><strong>12</strong></div><div><PackageCheck/><span>Prontas a enviar<small>Preparar expedição</small></span><strong>7</strong></div></section><section className="panel"><div className="panel-head"><div><small>OPERAÇÃO</small><h2>Encomendas recentes</h2></div><button>Ver todas</button></div><div className="table"><div className="row labels"><span>Encomenda</span><span>Cliente</span><span>Produto</span><span>Estado</span><span>Total</span></div>{orders.map((o)=><div className="row" key={o[0]}>{o.map((c,i)=><span key={c} className={i===3?"status":""}>{c}</span>)}</div>)}</div></section><section className="bottom"><div className="panel"><div className="panel-head"><div><small>OFICINA</small><h2>Fila de produção</h2></div><Box/></div><div className="job"><b>01</b><span>Dragão articulado<small>PLA roxo · 4h 20m restantes</small></span><i style={{width:"72%"}}/></div><div className="job"><b>02</b><span>Luminária lunar<small>PLA branco · 7h 10m</small></span><i style={{width:"35%"}}/></div></div><div className="panel highlight"><small>CAPACIDADE SEMANAL</small><strong>68%</strong><p>Há espaço para aproximadamente <b>14 novas peças</b> esta semana.</p></div></section></main></div>;
+}
