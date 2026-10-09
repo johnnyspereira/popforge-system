@@ -17,6 +17,8 @@
 - CRUD de produtos, variantes, imagens e stock.
 - Carrinho persistente, moradas, portes e checkout Stripe.
 - Webhooks idempotentes e emails transacionais.
+- Inventário de filamentos e embalagens com custo unitário automático.
+- Calculadora com consumo, tempo, energia, perdas, margem e IVA.
 
 ## Fase 3 — Oficina 3D
 
