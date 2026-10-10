@@ -1008,6 +1008,12 @@
       "namedRegex": "^/api/install(?:/)?$"
     },
     {
+      "page": "/api/install/migrate",
+      "regex": "^/api/install/migrate(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/install/migrate(?:/)?$"
+    },
+    {
       "page": "/api/integrations/google/callback",
       "regex": "^/api/integrations/google/callback(?:/)?$",
       "routeKeys": {},
