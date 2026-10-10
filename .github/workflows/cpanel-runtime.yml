@@ -133,6 +133,7 @@ jobs:
             engines: source.engines,
             scripts: {
               start: 'node server.js',
+              'db:migrate:mysql': 'node scripts/mysql-migrate.mjs',
             },
             dependencies,
             overrides: source.overrides,
