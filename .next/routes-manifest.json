@@ -1128,6 +1128,12 @@
       "namedRegex": "^/api/social/posts/publish(?:/)?$"
     },
     {
+      "page": "/api/storefront/orders",
+      "regex": "^/api/storefront/orders(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/storefront/orders(?:/)?$"
+    },
+    {
       "page": "/api/system/health",
       "regex": "^/api/system/health(?:/)?$",
       "routeKeys": {},
@@ -1360,6 +1366,30 @@
       "regex": "^/commerce/calculadora(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/commerce/calculadora(?:/)?$"
+    },
+    {
+      "page": "/commerce/encomendas",
+      "regex": "^/commerce/encomendas(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/commerce/encomendas(?:/)?$"
+    },
+    {
+      "page": "/commerce/inventario",
+      "regex": "^/commerce/inventario(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/commerce/inventario(?:/)?$"
+    },
+    {
+      "page": "/commerce/producao",
+      "regex": "^/commerce/producao(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/commerce/producao(?:/)?$"
+    },
+    {
+      "page": "/commerce/produtos",
+      "regex": "^/commerce/produtos(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/commerce/produtos(?:/)?$"
     },
     {
       "page": "/contacts",
