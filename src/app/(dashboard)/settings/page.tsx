@@ -11,23 +11,16 @@ import { SettingsRail } from '@/components/settings/settings-rail';
 import { SettingsOverview } from '@/components/settings/settings-overview';
 import { GeneralSettings } from '@/components/settings/general-settings';
 import { ProfileForm } from '@/components/settings/profile-form';
-import { WorkTimePanel } from '@/components/settings/work-time-panel';
-import { ClinicSettings } from '@/components/settings/clinic-settings';
-import { ClientPortalSettings } from '@/components/settings/client-portal-settings';
 import { SecurityPanel } from '@/components/settings/security-panel';
-import { PrivacyCompliancePanel } from '@/components/settings/privacy-compliance-panel';
 import { AppearancePanel } from '@/components/settings/appearance-panel';
 import { WhatsAppConfig } from '@/components/settings/whatsapp-config';
 import { TemplateManager } from '@/components/settings/template-manager';
 import { QuickRepliesManager } from '@/components/settings/quick-replies-manager';
-import { AutomatedMessagesSettings } from '@/components/settings/automated-messages-settings';
 import { FieldsAndTagsPanel } from '@/components/settings/fields-and-tags-panel';
 import { DealsSettings } from '@/components/settings/deals-settings';
-import { ReferralSettings } from '@/components/settings/referral-settings';
 import { RolesAccessPanel } from '@/components/settings/roles-access-panel';
 import { MembersTab } from '@/components/settings/members-tab';
 import { ApiKeysSettings } from '@/components/settings/api-keys-settings';
-import { DataCleanupPanel } from '@/components/settings/data-cleanup-panel';
 import { NewFeaturesSettings } from '@/components/settings/new-features-settings';
 import {
   getVisibleSettingsSections,
@@ -80,7 +73,6 @@ export default function SettingsPage() {
     () => ({
       appearance: t(`appearance.modeLabel.${mode}`),
       general: t('railHints.identity'),
-      'work-time': t('railHints.clock'),
       deals: defaultCurrency,
     }),
     [mode, defaultCurrency, t]
@@ -90,23 +82,16 @@ export default function SettingsPage() {
     overview: <SettingsOverview onSelect={go} />,
     general: <GeneralSettings />,
     profile: <ProfileForm />,
-    'work-time': <WorkTimePanel />,
-    clinic: <ClinicSettings />,
-    portal: <ClientPortalSettings />,
     security: <SecurityPanel />,
-    privacy: <PrivacyCompliancePanel />,
     appearance: <AppearancePanel />,
     whatsapp: <WhatsAppConfig />,
     templates: <TemplateManager />,
     'quick-replies': <QuickRepliesManager />,
-    'automated-messages': <AutomatedMessagesSettings />,
     fields: <FieldsAndTagsPanel />,
     deals: <DealsSettings />,
-    referrals: <ReferralSettings />,
     roles: <RolesAccessPanel onSelect={go} />,
     members: <MembersTab />,
     api: <ApiKeysSettings />,
-    'data-cleanup': <DataCleanupPanel />,
     'new-features': <NewFeaturesSettings />,
   };
   const activeMeta = SECTION_META[section];

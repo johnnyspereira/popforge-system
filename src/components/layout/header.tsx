@@ -23,7 +23,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ModeToggle } from '@/components/layout/mode-toggle';
 import { NewFeatureBadge } from '@/components/layout/new-feature-badge';
-import { WorkTimeClock } from '@/components/work-time/work-time-clock';
 import {
   bottomNavItems,
   isNavItemActive,
@@ -37,17 +36,11 @@ import { cn } from '@/lib/utils';
 
 const pageTitles: Record<string, string> = {
   '/dashboard': 'dashboard',
+  '/commerce': 'commerce',
   '/inbox': 'inbox',
   '/notifications': 'notifications',
   '/tasks': 'tasks',
-  '/agenda': 'agenda',
   '/contacts': 'contacts',
-  '/finance': 'finance',
-  '/benefits': 'benefits',
-  '/business-hub/goals': 'financialGoals',
-  '/business-hub': 'businessHub',
-  '/reports': 'reports',
-  '/referrals': 'referrals',
   '/pipelines': 'pipelines',
   '/broadcasts': 'broadcasts',
   '/segments': 'segments',
@@ -119,8 +112,6 @@ const headerLabelFallbacks = {
     socialPlanner: 'Publicações',
     portalCampaigns: 'Campanhas exclusivas',
     reports: 'Relatórios',
-    referrals: 'Indicações',
-    benefits: 'Packs e vouchers',
     systemHealth: 'Diagnóstico do Sistema',
     groupOperation: 'Operacao',
     groupCommercial: 'Comercial',
@@ -136,8 +127,6 @@ const headerLabelFallbacks = {
     socialPlanner: 'Social planner',
     portalCampaigns: 'Exclusive campaigns',
     reports: 'Reports',
-    referrals: 'Referrals',
-    benefits: 'Packs and vouchers',
     systemHealth: 'System diagnostics',
     groupOperation: 'Operation',
     groupCommercial: 'Commercial',
@@ -404,7 +393,6 @@ export function Header({
             opens the full account menu, while the clock moves out of the
             way so it cannot compete with navigation. */}
         <div className="hidden 2xl:block">
-          <WorkTimeClock />
         </div>
         <ModeToggle />
 

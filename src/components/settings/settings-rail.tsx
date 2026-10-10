@@ -5,7 +5,6 @@ import { useTranslations } from 'next-intl';
 import {
   BriefcaseBusiness,
   Building2,
-  CalendarDays,
   CircleUserRound,
   Database,
   MessageSquareText,
@@ -27,7 +26,6 @@ const GROUP_ICONS: Record<(typeof RAIL_GROUPS)[number]['group'], LucideIcon> = {
   main: Building2,
   account: CircleUserRound,
   operation: BriefcaseBusiness,
-  clinic: CalendarDays,
   messaging: MessageSquareText,
   crm: Database,
   system: Settings2,

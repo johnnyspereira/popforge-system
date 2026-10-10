@@ -23,11 +23,45 @@ const protectedPaths = [
   '/website',
 ];
 
+const legacyClinicPaths = [
+  '/agenda',
+  '/avaliacoes',
+  '/benefits',
+  '/referrals',
+  '/anamnese',
+  '/avaliar',
+  '/servicos',
+  '/profissionais',
+  '/testemunhos',
+  '/portal',
+  '/portal-campaigns',
+  '/site',
+  '/website',
+  '/voucher',
+  '/refer',
+  '/privacy',
+  '/privacidade',
+  '/finance',
+  '/business-hub',
+  '/reports',
+];
+
 export function proxy(request: NextRequest) {
   // This is intentionally an optimistic check. Every data access and mutation
   // must still validate the session against MySQL at the point of use.
   const hasSessionCookie = Boolean(request.cookies.get(SESSION_COOKIE)?.value);
   const pathname = request.nextUrl.pathname;
+
+  if (
+    legacyClinicPaths.some(
+      (path) => pathname === path || pathname.startsWith(`${path}/`)
+    )
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = hasSessionCookie ? '/commerce' : '/';
+    url.search = '';
+    return NextResponse.redirect(url);
+  }
 
   if (
     hasSessionCookie &&

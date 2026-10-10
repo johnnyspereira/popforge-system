@@ -1,739 +1,83 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
-import { useAuth } from '@/hooks/use-auth';
-import { formatCurrency } from '@/lib/currency';
-import {
-  MessageSquare,
-  UserPlus,
-  DollarSign,
-  Send,
-  RefreshCw,
-  TriangleAlert,
-  Gift,
-  PackageCheck,
-  Clock3,
-  CalendarDays,
-  ReceiptText,
-  ArrowUpRight,
-} from 'lucide-react';
+import { ArrowRight, Boxes, CircleDollarSign, Factory, PackageSearch, RefreshCw, ShoppingBag, Store, TriangleAlert } from 'lucide-react';
+import { createMysqlBrowserClient } from '@/lib/mysql/browser-client';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
-import {
-  loadActivity,
-  loadAutomationInsights,
-  loadConversationsSeries,
-  loadInboxOperations,
-  loadMetrics,
-  loadPipelineDonut,
-  loadResponseTime,
-  loadSalesInsights,
-  loadTeamPerformance,
-  loadTodayOperations,
-  loadWhatsAppHealth,
-  loadExpiringBenefits,
-  loadPortalPendingConfirmations,
-} from '@/lib/dashboard/queries';
-import type {
-  ActivityItem,
-  AutomationInsights,
-  ConversationsSeriesPoint,
-  InboxOperations,
-  MetricsBundle,
-  PipelineDonutData,
-  ResponseTimeSummary,
-  SalesInsights,
-  TeamPerformance,
-  TodayOperations,
-  WhatsAppHealth,
-  ExpiringBenefitItem,
-  PortalPendingConfirmationItem,
-} from '@/lib/dashboard/types';
-
-import { MetricCard } from '@/components/dashboard/metric-card';
-import { SkeletonCard } from '@/components/dashboard/skeleton';
-import { QuickActions } from '@/components/dashboard/quick-actions';
-import { ConversationsChart } from '@/components/dashboard/conversations-chart';
-import { PipelineDonut } from '@/components/dashboard/pipeline-donut';
-import { ResponseTimeChart } from '@/components/dashboard/response-time-chart';
-import { ActivityFeed } from '@/components/dashboard/activity-feed';
-import { FollowUpCommandCenter } from '@/components/dashboard/follow-up-command-center';
-import { TodayOperationsPanel } from '@/components/dashboard/today-operations';
-import { PortalPendingConfirmationsCard } from '@/components/dashboard/portal-pending-confirmations';
-import {
-  AutomationInsightsPanel,
-  DashboardAlertsPanel,
-  InboxOperationsPanel,
-  SalesInsightsPanel,
-  TeamPerformancePanel,
-  WhatsAppHealthCard,
-} from '@/components/dashboard/operations-panels';
-import { cn } from '@/lib/utils';
-
-import { useTranslations } from 'next-intl';
-
-type RangeDays = 7 | 30 | 90;
+type Order = { id: string; order_number: string | null; customer_name: string | null; status: string; total: number | string; created_at: string };
+type Product = { id: string; status: string };
+type Variant = { id: string; stock_quantity: number | string; track_stock: boolean | number };
+type Inventory = { id: string; name: string; remaining_quantity: number | string; low_stock_threshold: number | string; unit: string };
+type Job = { id: string; status: string };
+const db = createMysqlBrowserClient();
+const paid = new Set(['paid', 'in_production', 'quality_check', 'ready_to_ship', 'shipped', 'delivered']);
+const labels: Record<string, string> = { pending_payment: 'A aguardar pagamento', paid: 'Pago', in_production: 'Em produção', quality_check: 'Controlo de qualidade', ready_to_ship: 'Pronto para envio', shipped: 'Enviado', delivered: 'Entregue', cancelled: 'Cancelado' };
+const euros = (value: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(value);
 
 export default function DashboardPage() {
-  const t = useTranslations('Dashboard.page');
-  const { defaultCurrency } = useAuth();
-  const [metrics, setMetrics] = useState<MetricsBundle | null>(null);
-  const [metricsLoading, setMetricsLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
-  const [loadErrors, setLoadErrors] = useState<Record<string, string>>({});
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [variants, setVariants] = useState<Variant[]>([]);
+  const [inventory, setInventory] = useState<Inventory[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const [range, setRange] = useState<RangeDays>(30);
-  // Keep a cache per range so switching tabs doesn't re-fetch what we
-  // already have. Ranges the user hasn't opened yet stay null and
-  // trigger a fetch on first view.
-  const [series, setSeries] = useState<
-    Record<RangeDays, ConversationsSeriesPoint[] | null>
-  >({
-    7: null,
-    30: null,
-    90: null,
-  });
-  const [seriesLoading, setSeriesLoading] = useState(true);
-
-  const [pipeline, setPipeline] = useState<PipelineDonutData | null>(null);
-  const [pipelineLoading, setPipelineLoading] = useState(true);
-
-  const [responseTime, setResponseTime] = useState<ResponseTimeSummary | null>(
-    null
-  );
-  const [responseTimeLoading, setResponseTimeLoading] = useState(true);
-
-  const [activity, setActivity] = useState<ActivityItem[] | null>(null);
-  const [activityLoading, setActivityLoading] = useState(true);
-
-  const [whatsapp, setWhatsApp] = useState<WhatsAppHealth | null>(null);
-  const [whatsappLoading, setWhatsAppLoading] = useState(true);
-
-  const [inboxOps, setInboxOps] = useState<InboxOperations | null>(null);
-  const [inboxOpsLoading, setInboxOpsLoading] = useState(true);
-
-  const [sales, setSales] = useState<SalesInsights | null>(null);
-  const [salesLoading, setSalesLoading] = useState(true);
-
-  const [automation, setAutomation] = useState<AutomationInsights | null>(null);
-  const [automationLoading, setAutomationLoading] = useState(true);
-
-  const [team, setTeam] = useState<TeamPerformance | null>(null);
-  const [teamLoading, setTeamLoading] = useState(true);
-  const [today, setToday] = useState<TodayOperations | null>(null);
-  const [todayLoading, setTodayLoading] = useState(true);
-  const [expiringBenefits, setExpiringBenefits] = useState<
-    ExpiringBenefitItem[] | null
-  >(null);
-  const [expiringBenefitsLoading, setExpiringBenefitsLoading] = useState(true);
-  const [portalPending, setPortalPending] = useState<
-    PortalPendingConfirmationItem[] | null
-  >(null);
-  const [portalPendingLoading, setPortalPendingLoading] = useState(true);
-  const dashboardDataUnavailable =
-    !metricsLoading &&
-    !metrics &&
-    Object.keys(loadErrors).length >= 5;
-
-  const loadAll = useCallback(
-    (rangeToLoad: RangeDays = 30, showLoading = true) => {
-      const db = createClient();
-      if (showLoading) {
-        setRefreshing(true);
-        setMetricsLoading(true);
-        setSeriesLoading(true);
-        setPipelineLoading(true);
-        setResponseTimeLoading(true);
-        setActivityLoading(true);
-        setWhatsAppLoading(true);
-        setInboxOpsLoading(true);
-        setSalesLoading(true);
-        setAutomationLoading(true);
-        setTeamLoading(true);
-        setTodayLoading(true);
-        setExpiringBenefitsLoading(true);
-        setPortalPendingLoading(true);
-      }
-      setLoadErrors({});
-
-      const recordFailure = (key: string, error: unknown) => {
-        console.error(`[dashboard] ${key} failed:`, error);
-        setLoadErrors((current) => ({
-          ...current,
-          [key]: error instanceof Error ? error.message : 'Falha ao carregar',
-        }));
-      };
-
-      // Kick everything off in parallel. Each block has its own
-      // setState + finally so a slow query doesn't hold up faster
-      // sections — each widget shows its own skeleton independently.
-      const tasks = [
-        loadMetrics(db)
-          .then((m) => setMetrics(m))
-          .catch((err) => recordFailure('Indicadores', err))
-          .finally(() => setMetricsLoading(false)),
-
-        loadConversationsSeries(db, rangeToLoad)
-          .then((s) => setSeries((prev) => ({ ...prev, [rangeToLoad]: s })))
-          .catch((err) => recordFailure('Conversas', err))
-          .finally(() => setSeriesLoading(false)),
-
-        loadPipelineDonut(db)
-          .then((p) => setPipeline(p))
-          .catch((err) => recordFailure('Pipeline', err))
-          .finally(() => setPipelineLoading(false)),
-
-        loadResponseTime(db)
-          .then((r) => setResponseTime(r))
-          .catch((err) => recordFailure('Tempo de resposta', err))
-          .finally(() => setResponseTimeLoading(false)),
-
-        // Fetch up to 50 so the biggest page-size option in the feed
-        // (50 rows) is already in memory — switching sizes then becomes
-        // a pure client-side slice with no extra round trip.
-        loadActivity(db, 50)
-          .then((a) => setActivity(a))
-          .catch((err) => recordFailure('Atividade', err))
-          .finally(() => setActivityLoading(false)),
-
-        loadWhatsAppHealth(db)
-          .then((w) => setWhatsApp(w))
-          .catch((err) => recordFailure('WhatsApp', err))
-          .finally(() => setWhatsAppLoading(false)),
-
-        loadInboxOperations(db)
-          .then((ops) => setInboxOps(ops))
-          .catch((err) => recordFailure('Inbox', err))
-          .finally(() => setInboxOpsLoading(false)),
-
-        loadSalesInsights(db)
-          .then((s) => setSales(s))
-          .catch((err) => recordFailure('Comercial', err))
-          .finally(() => setSalesLoading(false)),
-
-        loadAutomationInsights(db)
-          .then((a) => setAutomation(a))
-          .catch((err) => recordFailure('Automações', err))
-          .finally(() => setAutomationLoading(false)),
-
-        loadTeamPerformance(db)
-          .then((performance) => setTeam(performance))
-          .catch((err) => recordFailure('Equipa', err))
-          .finally(() => setTeamLoading(false)),
-        loadTodayOperations(db)
-          .then((operations) => setToday(operations))
-          .catch((err) => recordFailure('Operação diária', err))
-          .finally(() => setTodayLoading(false)),
-        loadExpiringBenefits(db)
-          .then((benefits) => setExpiringBenefits(benefits))
-          .catch((err) => recordFailure('Validades', err))
-          .finally(() => setExpiringBenefitsLoading(false)),
-        loadPortalPendingConfirmations(db)
-          .then((appointments) => setPortalPending(appointments))
-          .catch((err) => recordFailure('Marcações do Portal 360', err))
-          .finally(() => setPortalPendingLoading(false)),
-      ];
-
-      void Promise.allSettled(tasks).finally(() => {
-        setRefreshing(false);
-        setLastUpdatedAt(new Date());
-      });
-    },
-    []
-  );
-
+  const load = useCallback(async () => {
+    setLoading(true); setError('');
+    const results = await Promise.all([
+      db.from<Order[]>('commerce_orders').select('id,order_number,customer_name,status,total,created_at').order('created_at', { ascending: false }).limit(100),
+      db.from<Product[]>('commerce_products').select('id,status').limit(500),
+      db.from<Variant[]>('commerce_product_variants').select('id,stock_quantity,track_stock').limit(1000),
+      db.from<Inventory[]>('commerce_inventory_items').select('id,name,remaining_quantity,low_stock_threshold,unit').eq('active', true).limit(500),
+      db.from<Job[]>('commerce_production_jobs').select('id,status').limit(500),
+    ]);
+    const firstError = results.find((result) => result.error)?.error;
+    if (firstError) setError(firstError.message);
+    setOrders(Array.isArray(results[0].data) ? results[0].data : []);
+    setProducts(Array.isArray(results[1].data) ? results[1].data : []);
+    setVariants(Array.isArray(results[2].data) ? results[2].data : []);
+    setInventory(Array.isArray(results[3].data) ? results[3].data : []);
+    setJobs(Array.isArray(results[4].data) ? results[4].data : []);
+    setLoading(false);
+  }, []);
   useEffect(() => {
-    let cancelled = false;
-    void Promise.resolve().then(() => {
-      if (!cancelled) loadAll(30, false);
-    });
-    return () => {
-      cancelled = true;
+    const timer = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timer);
+  }, [load]);
+
+  const metrics = useMemo(() => {
+    const lowStock = inventory.filter((item) => Number(item.remaining_quantity) <= Number(item.low_stock_threshold));
+    return {
+      ordersToday: orders.filter((order) => order.created_at?.slice(0, 10) === new Date().toISOString().slice(0, 10)).length,
+      revenue: orders.filter((order) => paid.has(order.status)).reduce((sum, order) => sum + Number(order.total || 0), 0),
+      products: products.filter((product) => product.status === 'active').length,
+      lowStock,
+      stockAlerts: lowStock.length + variants.filter((variant) => Boolean(variant.track_stock) && Number(variant.stock_quantity) <= 0).length,
+      queue: jobs.filter((job) => !['completed', 'cancelled'].includes(job.status)).length,
     };
-  }, [loadAll]);
+  }, [inventory, jobs, orders, products, variants]);
+  const cards = [
+    ['Encomendas hoje', metrics.ordersToday, ShoppingBag, '/commerce/encomendas'],
+    ['Vendas registadas', euros(metrics.revenue), CircleDollarSign, '/commerce/encomendas'],
+    ['Produtos ativos', metrics.products, Boxes, '/commerce/produtos'],
+    ['Alertas de stock', metrics.stockAlerts, TriangleAlert, '/commerce/inventario'],
+    ['Fila de produção', metrics.queue, Factory, '/commerce/producao'],
+  ] as const;
 
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      if (document.visibilityState === 'visible') loadAll(range, false);
-    }, 30_000);
-    return () => window.clearInterval(timer);
-  }, [loadAll, range]);
-
-  useEffect(() => {
-    const refreshWhenVisible = () => {
-      if (document.visibilityState === 'visible') loadAll(range, false);
-    };
-    window.addEventListener('visibilitychange', refreshWhenVisible);
-    return () => window.removeEventListener('visibilitychange', refreshWhenVisible);
-  }, [loadAll, range]);
-
-  // Range switch handler — kept in an event callback (not an effect)
-  // so the setState calls stay out of the react-hooks/set-state-in-effect
-  // rule's way. The cached bucket check means switching back to a
-  // previously-viewed range is instant and doesn't re-fetch.
-  const handleRangeChange = useCallback(
-    (r: RangeDays) => {
-      setRange(r);
-      if (series[r] !== null) return;
-      setSeriesLoading(true);
-      const db = createClient();
-      loadConversationsSeries(db, r)
-        .then((s) => setSeries((prev) => ({ ...prev, [r]: s })))
-        .catch((err) => console.error('[dashboard] series failed:', err))
-        .finally(() => setSeriesLoading(false));
-    },
-    [series]
-  );
-
-  return (
-    <div className="mx-auto max-w-[1680px] space-y-5 pb-10">
-      <section className="relative isolate overflow-hidden rounded-[2rem] border border-slate-800 bg-[#09101f] px-5 py-6 text-white shadow-2xl shadow-slate-950/15 sm:px-8 sm:py-8">
-        <div className="pointer-events-none absolute -right-16 -top-28 size-80 rounded-full bg-primary/25 blur-3xl" />
-        <div className="pointer-events-none absolute bottom-0 left-1/4 size-56 rounded-full bg-emerald-400/10 blur-3xl" />
-        <div className="relative grid gap-7 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
-          <div className="max-w-3xl">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-300">Centro de operações</p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">O seu dia, sob controlo.</h1>
-            <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300">Priorize clientes, agenda, vendas e pagamentos sem procurar informação em vários ecrãs.</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Link href="/agenda" className="inline-flex items-center gap-2 rounded-xl bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-950 transition-transform hover:-translate-y-0.5">
-              <CalendarDays className="size-4" /> Abrir agenda
-            </Link>
-            <Link href="/finance?tab=pos" className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3.5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/15">
-              <ReceiptText className="size-4" /> Nova venda
-            </Link>
-            <button type="button" onClick={() => loadAll(range)} disabled={refreshing} className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3.5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-60">
-              <RefreshCw className={cn('size-4', refreshing && 'animate-spin')} /> Atualizar
-            </button>
-          </div>
-        </div>
-        <div className="relative mt-7 grid gap-2 sm:grid-cols-3 xl:max-w-3xl">
-          <DashboardHeroStat icon={CalendarDays} label="Agenda de hoje" value={today ? `${today.appointmentsTotal} marcações` : 'A carregar'} />
-          <DashboardHeroStat icon={MessageSquare} label="Conversas em curso" value={metrics ? metrics.activeConversations.current.toLocaleString() : 'A carregar'} />
-          <DashboardHeroStat icon={DollarSign} label="Negócios em aberto" value={metrics ? formatCurrency(metrics.openDealsValue, defaultCurrency) : 'A carregar'} />
-        </div>
-      </section>
-
-      {Object.keys(loadErrors).length > 0 ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm">
-          <div className="flex min-w-0 items-start gap-2">
-            <TriangleAlert className="mt-0.5 size-4 shrink-0 text-amber-600" />
-            <div>
-              <p className="font-medium">Alguns dados não foram atualizados</p>
-              <p className="text-muted-foreground text-xs">
-                {Object.keys(loadErrors).join(', ')}. Os restantes módulos
-                continuam disponíveis.
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => loadAll(range)}
-            className="text-primary text-xs font-semibold hover:underline"
-          >
-            Atualizar agora
-          </button>
-        </div>
-      ) : null}
-
-      {lastUpdatedAt ? (
-        <p className="text-muted-foreground -mt-3 text-right text-[11px]">
-          Atualizado às{' '}
-          {lastUpdatedAt.toLocaleTimeString('pt-PT', {
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
-        </p>
-      ) : null}
-
-      {dashboardDataUnavailable ? (
-        <section className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-8 text-center">
-          <TriangleAlert className="mx-auto size-7 text-amber-700" />
-          <h2 className="mt-3 font-semibold text-amber-950">
-            Não foi possível carregar os dados do painel
-          </h2>
-          <p className="mx-auto mt-1 max-w-xl text-sm text-amber-900/75">
-            A aplicação está a responder, mas a ligação aos dados do CRM falhou.
-            Reinicie a aplicação no cPanel e atualize esta página. Os seus dados não foram alterados.
-          </p>
-          <button
-            type="button"
-            onClick={() => loadAll(range)}
-            disabled={refreshing}
-            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-amber-900 px-3.5 py-2 text-sm font-semibold text-white hover:bg-amber-800 disabled:opacity-60"
-          >
-            <RefreshCw className={cn('size-4', refreshing && 'animate-spin')} />
-            Tentar novamente
-          </button>
-        </section>
-      ) : (
-        <>
-
-      <section className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(360px,0.9fr)]">
-          <div className="min-w-0 overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
-            <TodayOperationsPanel
-              data={today}
-              loading={todayLoading}
-              currency={defaultCurrency}
-              error={Boolean(loadErrors['Operação diária'])}
-            />
-          </div>
-
-      {(portalPendingLoading || Boolean(loadErrors['Marcações do Portal 360']) || Boolean(portalPending?.length)) && (
-        <div className="min-w-0">
-          <PortalPendingConfirmationsCard
-            appointments={portalPending}
-            loading={portalPendingLoading}
-            error={Boolean(loadErrors['Marcações do Portal 360'])}
-          />
-        </div>
-      )}
-      </section>
-
-      <section className="space-y-3 rounded-3xl border border-border/70 bg-card-2/30 p-4 sm:p-5">
-        <DashboardSectionLabel
-          eyebrow="Agora"
-          title="O que pede a sua atenção"
-          description="Alertas, conversas e situações que podem bloquear o dia."
-        />
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <div className="xl:col-span-2">
-          <DashboardAlertsPanel
-            whatsapp={whatsapp}
-            inbox={inboxOps}
-            sales={sales}
-            automation={automation}
-            loading={
-              whatsappLoading ||
-              inboxOpsLoading ||
-              salesLoading ||
-              automationLoading
-            }
-          />
-        </div>
-        <WhatsAppHealthCard data={whatsapp} loading={whatsappLoading} />
-      </div>
-      </section>
-
-      <FollowUpCommandCenter />
-
-      <section className="space-y-3 rounded-3xl border border-border bg-card p-4 shadow-sm sm:p-5">
-        <DashboardSectionLabel
-          eyebrow="Pulso do negócio"
-          title="Os números essenciais"
-          description="Uma leitura rápida da atividade comercial de hoje."
-        />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {metricsLoading ? (
-          Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
-        ) : metrics ? (
-          <>
-            <MetricCard
-              title={t('activeConversations')}
-              value={metrics.activeConversations.current.toLocaleString()}
-              icon={MessageSquare}
-              href="/inbox"
-              delta={{
-                sign: metrics.activeConversations.previous,
-                label: deltaLabel(
-                  metrics.activeConversations.previous,
-                  t('newTodayVsYesterday'),
-                  t('noChange', { suffix: t('newTodayVsYesterday') })
-                ),
-              }}
-            />
-            <MetricCard
-              title={t('newContactsToday')}
-              value={metrics.newContactsToday.current.toLocaleString()}
-              icon={UserPlus}
-              href="/contacts"
-              delta={{
-                sign:
-                  metrics.newContactsToday.current -
-                  metrics.newContactsToday.previous,
-                label: deltaLabel(
-                  metrics.newContactsToday.current -
-                    metrics.newContactsToday.previous,
-                  t('vsYesterday'),
-                  t('noChange', { suffix: t('vsYesterday') })
-                ),
-              }}
-            />
-            <MetricCard
-              title={t('openDealsValue')}
-              value={formatCurrency(metrics.openDealsValue, defaultCurrency)}
-              icon={DollarSign}
-              href="/pipelines"
-              subtitle={t('openDeals', { count: metrics.openDealsCount })}
-            />
-            <MetricCard
-              title={t('messagesSentToday')}
-              value={metrics.messagesSentToday.current.toLocaleString()}
-              icon={Send}
-              href="/inbox"
-              delta={{
-                sign:
-                  metrics.messagesSentToday.current -
-                  metrics.messagesSentToday.previous,
-                label: deltaLabel(
-                  metrics.messagesSentToday.current -
-                    metrics.messagesSentToday.previous,
-                  t('vsYesterday'),
-                  t('noChange', { suffix: t('vsYesterday') })
-                ),
-              }}
-            />
-          </>
-        ) : (
-          <div className="border-border text-muted-foreground col-span-full rounded-lg border px-5 py-10 text-center text-sm">
-            Indicadores indisponíveis. Atualize o Dashboard para tentar
-            novamente.
-          </div>
-        )}
-      </div>
-      </section>
-
-      <section className="space-y-4 rounded-3xl border border-border bg-card p-4 sm:p-5">
-        <DashboardSectionLabel
-          eyebrow="Benefícios"
-          title="Vouchers e packs em movimento"
-          description="Validades e saldos que exigem acompanhamento antes de se tornarem urgentes."
-          href="/finance?tab=vouchers"
-          action="Ver benefícios"
-        />
-      <ExpiringBenefitsPanel
-        benefits={expiringBenefits}
-        loading={expiringBenefitsLoading}
-        error={Boolean(loadErrors.Validades)}
-      />
-      </section>
-
-      <section className="space-y-3 rounded-3xl border border-border bg-card p-4 shadow-sm sm:p-5">
-        <DashboardSectionLabel
-          eyebrow="Acesso rápido"
-          title="Comece uma tarefa em segundos"
-          description="Atalhos para as operações que utiliza todos os dias."
-        />
-        <QuickActions />
-      </section>
-
-      <section className="space-y-4 rounded-3xl border border-border bg-card p-4 shadow-sm sm:p-5">
-        <DashboardSectionLabel
-          eyebrow="Clientes e receita"
-          title="Continuar conversas e fechar vendas"
-          description="Veja quem espera resposta e onde está a receita em aberto."
-          href="/contacts"
-          action="Ver clientes"
-        />
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-          <div className="xl:col-span-2">
-            <InboxOperationsPanel data={inboxOps} loading={inboxOpsLoading} />
-          </div>
-          <SalesInsightsPanel
-            data={sales}
-            loading={salesLoading}
-            currency={defaultCurrency}
-          />
-        </div>
-      </section>
-
-      <section className="space-y-4 rounded-3xl border border-border bg-card p-4 shadow-sm sm:p-5">
-        <DashboardSectionLabel
-          eyebrow="Desempenho"
-          title="Melhore o ritmo da operação"
-          description="Acompanhe automações, equipa e qualidade do atendimento."
-        />
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-          <AutomationInsightsPanel
-            data={automation}
-            loading={automationLoading}
-          />
-          <div className="xl:col-span-2">
-            <TeamPerformancePanel data={team} loading={teamLoading} />
-          </div>
-        </div>
-      </section>
-
-      {/* Charts row */}
-      {/* items-stretch (the grid default) stretches the two columns to
-          match the tallest sibling; adding h-full on each wrapper and
-          on the inner panels makes both cards actually fill that
-          stretched height so their rounded borders line up. Without
-          this, the pipeline card rendered at its natural (shorter)
-          height while the line chart drove the row height. */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-        <div className="h-full lg:col-span-3">
-          <ConversationsChart
-            series={series}
-            loading={seriesLoading}
-            range={range}
-            onRangeChange={handleRangeChange}
-          />
-        </div>
-        <div className="h-full lg:col-span-2">
-          <PipelineDonut
-            data={pipeline}
-            loading={pipelineLoading}
-            currency={defaultCurrency}
-          />
-        </div>
-      </div>
-
-      {/* Response time */}
-      <ResponseTimeChart data={responseTime} loading={responseTimeLoading} />
-
-      {/* Activity feed */}
-      <ActivityFeed items={activity} loading={activityLoading} />
-        </>
-      )}
-    </div>
-  );
-}
-
-// ------------------------------------------------------------
-
-function DashboardHeroStat({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: typeof CalendarDays;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.06] px-3 py-3 backdrop-blur sm:px-4">
-      <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.13em] text-slate-400"><Icon className="size-3.5 text-emerald-300" />{label}</div>
-      <p className="mt-1 text-base font-semibold tracking-tight text-white sm:text-lg">{value}</p>
-    </div>
-  );
-}
-
-function DashboardSectionLabel({
-  eyebrow,
-  title,
-  description,
-  href,
-  action,
-}: {
-  eyebrow: string;
-  title: string;
-  description: string;
-  href?: string;
-  action?: string;
-}) {
-  return (
-    <div className="flex flex-wrap items-end justify-between gap-3 px-1">
-      <div>
-        <p className="text-primary text-[11px] font-bold uppercase tracking-[0.16em]">
-          {eyebrow}
-        </p>
-        <h2 className="text-foreground mt-0.5 text-lg font-semibold tracking-tight">
-          {title}
-        </h2>
-        <p className="text-muted-foreground mt-0.5 text-sm">{description}</p>
-      </div>
-      {href && action ? (
-        <Link
-          href={href}
-          className="text-primary inline-flex items-center gap-1 text-sm font-semibold hover:underline"
-        >
-          {action} <ArrowUpRight className="size-4" />
-        </Link>
-      ) : null}
-    </div>
-  );
-}
-
-function ExpiringBenefitsPanel({
-  benefits,
-  loading,
-  error = false,
-}: {
-  benefits: ExpiringBenefitItem[] | null;
-  loading: boolean;
-  error?: boolean;
-}) {
-  const [now] = useState(() => Date.now());
-  return (
-    <section className="border-border bg-card rounded-xl border p-4 shadow-sm">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="flex items-center gap-2 font-semibold">
-            <Clock3 className="size-4 text-amber-600" /> Vouchers e packs a vencer
-          </h2>
-          <p className="text-muted-foreground mt-1 text-xs">
-            Benefícios ativos com validade nos próximos 30 dias.
-          </p>
-        </div>
-        <Link
-          href="/finance?tab=vouchers"
-          className="text-primary text-xs font-semibold hover:underline"
-        >
-          Ver financeiro
-        </Link>
-      </div>
-      {loading ? (
-        <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <div key={index} className="bg-muted h-20 animate-pulse rounded-lg" />
-          ))}
-        </div>
-      ) : error ? (
-        <p className="mt-4 rounded-lg border border-amber-300/60 bg-amber-50/50 px-3 py-4 text-sm text-amber-900 dark:bg-amber-950/20 dark:text-amber-200">
-          Não foi possível consultar os vouchers e packs. Atualize a dashboard para tentar novamente.
-        </p>
-      ) : benefits?.length ? (
-        <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-          {benefits.map((benefit) => {
-            const days = Math.max(
-              0,
-              Math.ceil((new Date(benefit.expiresAt).getTime() - now) / 86_400_000)
-            );
-            const Icon = benefit.type === 'voucher' ? Gift : PackageCheck;
-            return (
-              <Link
-                key={`${benefit.type}:${benefit.id}`}
-                href={`/contacts/${benefit.contactId}?tab=benefits`}
-                className="border-border hover:border-amber-400 hover:bg-amber-50/40 rounded-lg border p-3 transition-colors"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <span className="flex min-w-0 items-center gap-2 text-sm font-semibold">
-                    <Icon className="size-4 shrink-0 text-amber-600" />
-                    <span className="truncate">{benefit.contactName}</span>
-                  </span>
-                  <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
-                    {days === 0 ? 'Hoje' : `${days} dia${days === 1 ? '' : 's'}`}
-                  </span>
-                </div>
-                <p className="text-muted-foreground mt-2 truncate text-xs">
-                  {benefit.type === 'voucher' ? 'Voucher' : 'Pack'} · {benefit.label}
-                </p>
-                <p className="mt-1 text-xs font-medium">
-                  {benefit.remainingLabel} · até {new Date(benefit.expiresAt).toLocaleDateString('pt-PT')}
-                </p>
-              </Link>
-            );
-          })}
-        </div>
-      ) : (
-        <p className="text-muted-foreground mt-4 rounded-lg bg-muted/40 px-3 py-4 text-sm">
-          Não há vouchers ou packs ativos a vencer nos próximos 30 dias.
-        </p>
-      )}
+  return <div className="space-y-6">
+    <section className="overflow-hidden rounded-3xl border border-cyan-400/20 bg-[radial-gradient(circle_at_top_right,_rgba(34,211,238,0.22),_transparent_38%),linear-gradient(135deg,#050b12,#0b2730)] p-6 text-white shadow-xl sm:p-8">
+      <div className="flex flex-wrap items-end justify-between gap-6"><div className="max-w-3xl"><p className="text-xs font-bold tracking-[0.18em] text-cyan-300 uppercase">POPForge Commerce OS</p><h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Centro de comando e-commerce</h1><p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">Controle catálogo, encomendas, pagamentos, stock, produção 3D e expedição numa única operação.</p></div><div className="flex flex-wrap gap-2"><Link href="/commerce/produtos" className={buttonVariants({ className: 'bg-cyan-400 text-slate-950 hover:bg-cyan-300' })}>Novo produto</Link><Link href="/" target="_blank" className={buttonVariants({ variant: 'outline', className: 'border-white/25 bg-white/5 text-white hover:bg-white/10 hover:text-white' })}><Store className="size-4" />Abrir loja</Link></div></div>
     </section>
-  );
-}
-
-function deltaLabel(
-  delta: number,
-  suffix: string,
-  noChangeLabel: string
-): string {
-  if (delta === 0) return noChangeLabel;
-  const sign = delta > 0 ? '+' : '';
-  return `${sign}${delta.toLocaleString()} ${suffix}`;
+    {error ? <p className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-600">Não foi possível atualizar o painel: {error}</p> : null}
+    <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">{cards.map(([label, value, Icon, href]) => <Link key={label} href={href}><Card className="h-full transition hover:-translate-y-0.5 hover:border-cyan-500/40 hover:shadow-md"><CardContent className="p-5"><div className="flex items-center justify-between"><span className="rounded-xl bg-cyan-500/10 p-2 text-cyan-600"><Icon className="size-5" /></span><ArrowRight className="size-4 text-muted-foreground" /></div><p className="mt-5 text-2xl font-bold">{loading ? '—' : value}</p><p className="mt-1 text-sm text-muted-foreground">{label}</p></CardContent></Card></Link>)}</section>
+    <section className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
+      <Card><CardHeader className="flex-row items-center justify-between"><CardTitle>Encomendas recentes</CardTitle><Link href="/commerce/encomendas" className={buttonVariants({ size: 'sm', variant: 'ghost' })}>Ver todas</Link></CardHeader><CardContent className="space-y-3">{!loading && orders.length === 0 ? <div className="py-10 text-center"><PackageSearch className="mx-auto size-9 text-muted-foreground" /><p className="mt-3 font-medium">Ainda não existem encomendas</p><p className="text-sm text-muted-foreground">As compras feitas na loja pública aparecerão aqui.</p></div> : orders.slice(0, 7).map((order) => <div key={order.id} className="flex items-center justify-between gap-3 rounded-xl border p-3"><div className="min-w-0"><p className="truncate font-semibold">#{order.order_number || order.id.slice(0, 8)} · {order.customer_name || 'Cliente'}</p><p className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleString('pt-PT')}</p></div><div className="text-right"><p className="font-semibold">{euros(Number(order.total || 0))}</p><Badge variant="secondary">{labels[order.status] || order.status}</Badge></div></div>)}</CardContent></Card>
+      <Card><CardHeader className="flex-row items-center justify-between"><CardTitle>Stock a exigir atenção</CardTitle><Button type="button" size="icon" variant="ghost" onClick={() => void load()} aria-label="Atualizar"><RefreshCw className="size-4" /></Button></CardHeader><CardContent className="space-y-3">{!loading && metrics.lowStock.length === 0 ? <p className="py-10 text-center text-sm text-muted-foreground">Nenhum material abaixo do stock mínimo.</p> : metrics.lowStock.slice(0, 8).map((item) => <Link href="/commerce/inventario" key={item.id} className="flex items-center justify-between rounded-xl border p-3 hover:bg-muted/40"><div><p className="font-medium">{item.name}</p><p className="text-xs text-muted-foreground">Mínimo: {Number(item.low_stock_threshold)} {item.unit}</p></div><Badge variant="destructive">{Number(item.remaining_quantity)} {item.unit}</Badge></Link>)}</CardContent></Card>
+    </section>
+  </div>;
 }

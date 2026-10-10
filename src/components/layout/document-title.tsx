@@ -11,7 +11,6 @@ const ROUTE_TITLE_KEYS: Array<[string, string]> = [
   ['/dashboard', 'dashboard'],
   ['/inbox', 'inbox'],
   ['/notifications', 'notifications'],
-  ['/agenda', 'agenda'],
   ['/contacts', 'contacts'],
   ['/finance', 'finance'],
   ['/benefits', 'benefits'],
