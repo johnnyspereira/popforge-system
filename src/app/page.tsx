@@ -1,7 +1,11 @@
 import type { Metadata } from 'next';
+import type { RowDataPacket } from 'mysql2';
 import { PublicBusinessPage } from './site/[slug]/page';
 import { redirect } from 'next/navigation';
 import { getDefaultPublicBusinessSlug, getPublicBusinessSite } from '@/lib/public-site/server';
+import { selectRows } from '@/lib/mysql/db';
+
+interface CountRow extends RowDataPacket { total: number }
 
 export async function generateMetadata(): Promise<Metadata> {
   const slug = await getDefaultPublicBusinessSlug();
@@ -23,6 +27,15 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootPage() {
   const slug = await getDefaultPublicBusinessSlug();
   // The domain root is the business website, never the legacy directory.
-  if (!slug) redirect('/install');
+  if (!slug) {
+    let installed = false;
+    try {
+      const users = await selectRows<CountRow[]>('SELECT COUNT(*) AS total FROM app_users');
+      installed = Number(users[0]?.total || 0) > 0;
+    } catch {
+      installed = false;
+    }
+    redirect(installed ? '/login' : '/install');
+  }
   return <PublicBusinessPage params={Promise.resolve({ slug })} />;
 }
