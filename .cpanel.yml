@@ -1,7 +1,5 @@
 ---
 deployment:
   tasks:
-    # A branch cpanel-runtime contém a aplicação Node completa. O deploy
-    # apenas sinaliza o Passenger depois de atualizar o repositório.
     - /bin/mkdir -p /home/jpmassag/repositories/popforge-system/tmp
     - /usr/bin/touch /home/jpmassag/repositories/popforge-system/tmp/restart.txt
