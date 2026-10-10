@@ -8,6 +8,7 @@ const workerCallbackPaths = [
 
 const protectedPaths = [
   '/dashboard',
+  '/commerce',
   '/inbox',
   '/contacts',
   '/pipelines',

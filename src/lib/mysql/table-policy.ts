@@ -103,6 +103,17 @@ const financeTables = [
   'referrals',
 ] as const;
 
+const commerceTables = [
+  'commerce_categories',
+  'commerce_products',
+  'commerce_product_variants',
+  'commerce_inventory_items',
+  'commerce_orders',
+  'commerce_order_items',
+  'commerce_production_jobs',
+  'commerce_price_calculations',
+] as const;
+
 const policies: Record<string, TablePolicy> = {
   accounts: { accountColumn: 'id', minimumWriteRole: 'admin' },
   profiles: { accountColumn: 'account_id', minimumWriteRole: 'admin' },
@@ -196,6 +207,10 @@ for (const table of settingsTables) {
 }
 
 for (const table of financeTables) {
+  policies[table] = { accountColumn: 'account_id', minimumWriteRole: 'agent' };
+}
+
+for (const table of commerceTables) {
   policies[table] = { accountColumn: 'account_id', minimumWriteRole: 'agent' };
 }
 

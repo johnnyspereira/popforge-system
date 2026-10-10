@@ -40,7 +40,7 @@ export async function generateMetadata({
   };
 }
 
-export async function PublicBusinessPage({
+async function PublicBusinessPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
@@ -50,9 +50,7 @@ export async function PublicBusinessPage({
 
   if (!site) notFound();
 
-  // The public root deliberately uses the JP editorial template instead of
-  // the generic spa landing page. All copy, services, team and booking links
-  // remain sourced from Website Builder, so this is a layout change only.
+  // Public business pages remain configurable through Website Builder.
   return <PopforgePublicSite site={site} />;
 }
 
