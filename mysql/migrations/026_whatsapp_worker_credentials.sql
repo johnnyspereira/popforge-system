@@ -9,9 +9,5 @@ CREATE TABLE IF NOT EXISTS whatsapp_worker_credentials (
     FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO whatsapp_worker_credentials(account_id, secret_hash)
-VALUES(
-  '999933bb-5873-4612-abaf-40db59ca6ffc',
-  'fe1849aa9e65f67ed7f0379a655c539e47a577542ba3c4505140b0ed2c10ecdb'
-)
-ON DUPLICATE KEY UPDATE secret_hash = VALUES(secret_hash);
+-- Credentials are intentionally not seeded. Every POPForge account creates
+-- and rotates its own Worker secret from the WhatsApp settings screen.
