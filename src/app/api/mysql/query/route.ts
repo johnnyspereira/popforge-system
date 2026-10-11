@@ -47,6 +47,8 @@ export async function POST(request: Request) {
   const policy = getTablePolicy(query.table);
   if (!policy)
     return errorResponse('Table is not available.', 403, 'TABLE_FORBIDDEN');
+  if (query.operation !== 'select' && policy.readOnly)
+    return errorResponse('Table is read-only here.', 403, 'TABLE_READ_ONLY');
   if (
     query.operation !== 'select' &&
     !roleAllows(auth.profile.account_role, policy.minimumWriteRole ?? 'agent')

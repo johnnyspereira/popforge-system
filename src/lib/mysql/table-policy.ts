@@ -7,6 +7,8 @@ export interface TablePolicy {
     parentColumn?: string;
   };
   minimumWriteRole?: 'viewer' | 'agent' | 'admin' | 'owner';
+  /** Readable from the browser, writable only through dedicated API routes. */
+  readOnly?: boolean;
 }
 
 const directOperational = [
@@ -210,8 +212,12 @@ for (const table of financeTables) {
   policies[table] = { accountColumn: 'account_id', minimumWriteRole: 'agent' };
 }
 
+// Orders carry stock, payment and history side effects that only
+// /api/commerce/orders and /api/storefront/orders apply consistently.
+const apiOnlyCommerceTables = new Set(['commerce_orders', 'commerce_order_items']);
+
 for (const table of commerceTables) {
-  policies[table] = { accountColumn: 'account_id', minimumWriteRole: 'agent' };
+  policies[table] = { accountColumn: 'account_id', minimumWriteRole: 'agent', readOnly: apiOnlyCommerceTables.has(table) };
 }
 
 Object.assign(policies, {

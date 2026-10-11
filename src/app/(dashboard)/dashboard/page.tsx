@@ -14,8 +14,8 @@ type Variant = { id: string; stock_quantity: number | string; track_stock: boole
 type Inventory = { id: string; name: string; remaining_quantity: number | string; low_stock_threshold: number | string; unit: string };
 type Job = { id: string; status: string };
 const db = createMysqlBrowserClient();
-const paid = new Set(['paid', 'in_production', 'quality_check', 'ready_to_ship', 'shipped', 'delivered']);
-const labels: Record<string, string> = { pending_payment: 'A aguardar pagamento', paid: 'Pago', in_production: 'Em produção', quality_check: 'Controlo de qualidade', ready_to_ship: 'Pronto para envio', shipped: 'Enviado', delivered: 'Entregue', cancelled: 'Cancelado' };
+const paid = new Set(['paid', 'confirmed', 'in_production', 'quality_check', 'ready_to_ship', 'shipped', 'delivered']);
+const labels: Record<string, string> = { pending_payment: 'Pendente', confirmed: 'Confirmada', paid: 'Confirmada (legado)', in_production: 'Em produção', quality_check: 'Controlo de qualidade', ready_to_ship: 'Pronto para envio', shipped: 'Enviado', delivered: 'Entregue', cancelled: 'Cancelado' };
 const euros = (value: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(value);
 
 export default function DashboardPage() {

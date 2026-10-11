@@ -1,2 +1,2 @@
-import { CommerceManager } from '@/components/commerce/commerce-manager';
-export default function Page() { return <CommerceManager kind="orders" />; }
+import { OrderOperations } from "@/components/commerce/order-operations";
+export default function Page() { return <OrderOperations />; }

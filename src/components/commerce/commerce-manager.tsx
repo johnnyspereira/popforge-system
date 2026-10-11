@@ -7,6 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { nextOrderStatuses, ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS, PAYMENT_STATUSES } from '@/lib/commerce/order-status';
+
+const orderLabels: Record<string, string> = ORDER_STATUS_LABELS;
+const paymentLabels: Record<string, string> = PAYMENT_STATUS_LABELS;
 
 type Kind = 'products' | 'inventory' | 'orders' | 'production';
 type Row = Record<string, unknown> & { id: string };
@@ -67,11 +71,11 @@ export function CommerceManager({ kind }: { kind: Kind }) {
     catch (cause) { setError(cause instanceof Error ? cause.message : 'Não foi possível guardar.'); }
   }
 
-  async function updateStatus(row: Row, status: string) {
+  async function updateStatus(row: Row, status: string, field: 'status' | 'paymentStatus' = 'status') {
     if (kind === 'orders') {
       const response = await fetch('/api/commerce/orders', {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: row.id, status }),
+        body: JSON.stringify({ id: row.id, [field]: status }),
       });
       const payload = (await response.json().catch(() => ({}))) as { error?: string };
       if (!response.ok) { setError(payload.error || 'Não foi possível atualizar a encomenda.'); return; }
@@ -94,6 +98,6 @@ export function CommerceManager({ kind }: { kind: Kind }) {
       </form>
     </CardContent></Card>}
     {error && <p className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-600">{error}</p>}
-    <Card><CardContent className="pt-6">{loading ? <p>A carregar…</p> : rows.length === 0 ? <p className="py-10 text-center text-muted-foreground">{current.empty}</p> : <div className="space-y-3">{rows.map(row => <div key={row.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4"><div><p className="font-semibold">{String(row.name || row.product_name || `Encomenda #${row.order_number || ''}` || 'Trabalho')}</p><p className="text-sm text-muted-foreground">{String(row.sku || row.customer_email || row.printer_name || '')}</p></div><div className="flex items-center gap-2"><Badge variant="secondary">{String(row.status || row.item_type || 'ativo')}</Badge>{kind === 'orders' && <select value={String(row.status)} onChange={e => void updateStatus(row, e.target.value)} className="h-8 rounded-lg border bg-background px-2 text-sm"><option value="pending_payment">A aguardar pagamento</option><option value="paid">Pago</option><option value="in_production">Em produção</option><option value="quality_check">Qualidade</option><option value="ready_to_ship">Pronto para envio</option><option value="shipped">Enviado</option><option value="delivered">Entregue</option><option value="cancelled">Cancelado</option></select>}</div></div>)}</div>}</CardContent></Card>
+    <Card><CardContent className="pt-6">{loading ? <p>A carregar…</p> : rows.length === 0 ? <p className="py-10 text-center text-muted-foreground">{current.empty}</p> : <div className="space-y-3">{rows.map(row => <div key={row.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4"><div><p className="font-semibold">{String(row.name || row.product_name || `Encomenda #${row.order_number || ''}` || 'Trabalho')}</p><p className="text-sm text-muted-foreground">{String(row.sku || row.customer_email || row.printer_name || '')}</p></div><div className="flex items-center gap-2">{kind !== 'orders' && <Badge variant="secondary">{String(row.status || row.item_type || 'ativo')}</Badge>}{kind === 'orders' && <><select aria-label="Estado da encomenda" value="" onChange={e => { if (e.target.value) void updateStatus(row, e.target.value); }} disabled={nextOrderStatuses(String(row.status)).length === 0} className="h-8 rounded-lg border bg-background px-2 text-sm"><option value="">{orderLabels[String(row.status)] || String(row.status)}</option>{nextOrderStatuses(String(row.status)).map(status => <option key={status} value={status}>→ {orderLabels[status]}</option>)}</select><select aria-label="Estado do pagamento" value={String(row.payment_status)} onChange={e => void updateStatus(row, e.target.value, 'paymentStatus')} className="h-8 rounded-lg border bg-background px-2 text-sm">{PAYMENT_STATUSES.map(status => <option key={status} value={status}>Pagamento: {paymentLabels[status]}</option>)}</select>{Boolean(Number(row.customer_review_required)) && <Badge variant="destructive">Rever cliente</Badge>}</>}</div></div>)}</div>}</CardContent></Card>
   </div>;
 }
