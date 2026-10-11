@@ -16,9 +16,23 @@ async function authContext() {
   return session ? getAuthContext(session.user.id) : null;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const auth = await authContext();
   if (!auth) return Response.json({ error: "Sessão inválida." }, { status: 401 });
+  const id = new URL(request.url).searchParams.get("id");
+  if (id) {
+    const orders = await selectRows<(OrderRow & { notes: string | null; shipping_address: string | null; tracking_code: string | null })[]>(
+      "SELECT id,order_number,status,payment_status,channel,total,customer_name,customer_email,customer_phone,created_at,notes,shipping_address,tracking_code,0 AS items FROM commerce_orders WHERE id=? AND account_id=? LIMIT 1", [id, auth.account.id],
+    );
+    const order = orders[0];
+    if (!order) return Response.json({ error: "Encomenda não encontrada." }, { status: 404 });
+    const [items, history, jobs] = await Promise.all([
+      selectRows<RowDataPacket[]>("SELECT id,product_name,sku,quantity,unit_price,line_total,customization FROM commerce_order_items WHERE order_id=? ORDER BY created_at", [id]),
+      selectRows<RowDataPacket[]>("SELECT h.id,h.event_type,h.previous_value,h.new_value,h.notes,h.created_at,p.full_name AS actor_name FROM commerce_order_history h LEFT JOIN profiles p ON p.user_id=h.actor_user_id WHERE h.order_id=? ORDER BY h.created_at DESC", [id]),
+      selectRows<RowDataPacket[]>("SELECT j.id,j.status,j.printer_name,j.estimated_minutes,j.actual_minutes,j.created_at,i.product_name FROM commerce_production_jobs j LEFT JOIN commerce_order_items i ON i.id=j.order_item_id WHERE j.order_item_id IN (SELECT id FROM commerce_order_items WHERE order_id=?) ORDER BY j.created_at DESC", [id]),
+    ]);
+    return Response.json({ order, items, history, jobs });
+  }
   const orders = await selectRows<OrderRow[]>(
     `SELECT o.id,o.order_number,o.status,o.payment_status,o.channel,o.total,o.customer_name,o.customer_email,o.customer_phone,o.created_at,COUNT(i.id) AS items
        FROM commerce_orders o LEFT JOIN commerce_order_items i ON i.order_id=o.id
