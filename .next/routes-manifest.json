@@ -926,6 +926,12 @@
       "namedRegex": "^/api/commerce/products(?:/)?$"
     },
     {
+      "page": "/api/commerce/quotes",
+      "regex": "^/api/commerce/quotes(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/commerce/quotes(?:/)?$"
+    },
+    {
       "page": "/api/contacts",
       "regex": "^/api/contacts(?:/)?$",
       "routeKeys": {},
@@ -1164,6 +1170,12 @@
       "regex": "^/api/storefront/account/session(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/api/storefront/account/session(?:/)?$"
+    },
+    {
+      "page": "/api/storefront/account/verify",
+      "regex": "^/api/storefront/account/verify(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/storefront/account/verify(?:/)?$"
     },
     {
       "page": "/api/storefront/orders",
@@ -1428,6 +1440,12 @@
       "regex": "^/commerce/inventario(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/commerce/inventario(?:/)?$"
+    },
+    {
+      "page": "/commerce/orcamentos",
+      "regex": "^/commerce/orcamentos(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/commerce/orcamentos(?:/)?$"
     },
     {
       "page": "/commerce/producao",
