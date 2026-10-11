@@ -21,13 +21,13 @@
   "components/finance/private-management-page.tsx -> @/components/finance/owner-treasury": {
     "id": 2984,
     "files": [
-      "static/chunks/4878-4613e58e969c5606.js",
+      "static/chunks/4878-42290fdab19147c5.js",
       "static/chunks/6609-078a8cdc853f87c6.js",
-      "static/chunks/3997-c263f76eda75fbd0.js",
-      "static/chunks/2317-748012df7ef0c33e.js",
+      "static/chunks/3997-fd5b7b2592e6bdfa.js",
+      "static/chunks/2317-0000867d15a4e4b7.js",
       "static/chunks/465-ceaa04f05e73f7bc.js",
       "static/chunks/8902-fe82e440415b1a6f.js",
-      "static/chunks/500.840b5bc77e149f9a.js",
+      "static/chunks/500.89298f7295e8874e.js",
       "static/chunks/2984.a48e6ff6fbb302b8.js"
     ]
   },

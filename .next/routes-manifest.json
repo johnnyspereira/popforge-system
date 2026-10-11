@@ -914,6 +914,12 @@
       "namedRegex": "^/api/commerce/catalog/import\\-lovable(?:/)?$"
     },
     {
+      "page": "/api/commerce/orders",
+      "regex": "^/api/commerce/orders(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/commerce/orders(?:/)?$"
+    },
+    {
       "page": "/api/commerce/products",
       "regex": "^/api/commerce/products(?:/)?$",
       "routeKeys": {},
