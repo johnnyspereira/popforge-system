@@ -1154,6 +1154,18 @@
       "namedRegex": "^/api/social/posts/publish(?:/)?$"
     },
     {
+      "page": "/api/storefront/account/orders",
+      "regex": "^/api/storefront/account/orders(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/storefront/account/orders(?:/)?$"
+    },
+    {
+      "page": "/api/storefront/account/session",
+      "regex": "^/api/storefront/account/session(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/storefront/account/session(?:/)?$"
+    },
+    {
       "page": "/api/storefront/orders",
       "regex": "^/api/storefront/orders(?:/)?$",
       "routeKeys": {},
@@ -1524,6 +1536,12 @@
       "regex": "^/manifest\\.webmanifest(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/manifest\\.webmanifest(?:/)?$"
+    },
+    {
+      "page": "/minha-conta",
+      "regex": "^/minha\\-conta(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/minha\\-conta(?:/)?$"
     },
     {
       "page": "/notifications",
