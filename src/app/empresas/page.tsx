@@ -1,0 +1,3 @@
+import Link from "next/link";
+import { StorefrontRequestForm } from "@/components/commerce/storefront-request-form";
+export default function Page() { return <main className="min-h-screen bg-[#071014] px-5 py-12 text-slate-100"><div className="mx-auto max-w-3xl"><Link href="/" className="text-cyan-300">← POPForge</Link><p className="mt-10 text-xs font-bold tracking-[.2em] text-cyan-300">EMPRESAS & B2B</p><h1 className="mt-3 text-5xl font-black">Produção 3D para a sua marca.</h1><p className="mt-5 text-lg leading-8 text-slate-400">Brindes, sinalética, expositores, QR codes, protótipos e peças à medida. Cada pedido B2B entra no backoffice e pode ser convertido em orçamento e encomenda.</p><div className="mt-9"><StorefrontRequestForm type="b2b" /></div></div></main>; }
