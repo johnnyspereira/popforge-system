@@ -1,3 +1,5 @@
-import Link from "next/link";
-import { StorefrontRequestForm } from "@/components/commerce/storefront-request-form";
-export default function Page() { return <main className="min-h-screen bg-[#071014] px-5 py-12 text-slate-100"><div className="mx-auto max-w-3xl"><Link href="/" className="text-cyan-300">← POPForge</Link><p className="mt-10 text-xs font-bold tracking-[.2em] text-cyan-300">CRIA A TUA PEÇA</p><h1 className="mt-3 text-5xl font-black">Transformamos a tua ideia numa peça real.</h1><p className="mt-5 max-w-2xl text-lg leading-8 text-slate-400">Indica o objetivo, as medidas e as referências. O pedido entra diretamente na equipa POPForge para avaliação e orçamento.</p><div className="mt-9"><StorefrontRequestForm /></div></div></main>; }
+import { StorefrontRequestPage } from "@/components/commerce/storefront-request-page";
+
+export default function Page() {
+  return <StorefrontRequestPage type="custom" />;
+}
