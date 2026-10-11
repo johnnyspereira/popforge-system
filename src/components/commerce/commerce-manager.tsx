@@ -27,11 +27,19 @@ export function CommerceManager({ kind }: { kind: Kind }) {
 
   const load = useCallback(async () => {
     setLoading(true);
+    if (kind === 'orders') {
+      const response = await fetch('/api/commerce/orders', { cache: 'no-store' });
+      const payload = (await response.json().catch(() => ({}))) as { orders?: Row[]; error?: string };
+      setError(response.ok ? '' : (payload.error || 'Não foi possível carregar as encomendas.'));
+      setRows(payload.orders || []);
+      setLoading(false);
+      return;
+    }
     const result = await db.from<Row[]>(current.table).select('*').order('created_at', { ascending: false }).limit(200);
     setError(result.error?.message || '');
     setRows(Array.isArray(result.data) ? result.data : []);
     setLoading(false);
-  }, [current.table]);
+  }, [current.table, kind]);
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
     return () => window.clearTimeout(timer);
@@ -60,19 +68,18 @@ export function CommerceManager({ kind }: { kind: Kind }) {
   }
 
   async function updateStatus(row: Row, status: string) {
+    if (kind === 'orders') {
+      const response = await fetch('/api/commerce/orders', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: row.id, status }),
+      });
+      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+      if (!response.ok) { setError(payload.error || 'Não foi possível atualizar a encomenda.'); return; }
+      await load();
+      return;
+    }
     const result = await db.from(current.table).update({ status }).eq('id', row.id);
     if (result.error) { setError(result.error.message); return; }
-    if (kind === 'orders' && status === 'in_production') {
-      const items = await db.from<Row[]>('commerce_order_items').select('*').eq('order_id', row.id);
-      if (Array.isArray(items.data)) {
-        for (const item of items.data) {
-          const existing = await db.from<Row[]>('commerce_production_jobs').select('id').eq('order_item_id', item.id).limit(1);
-          if (!Array.isArray(existing.data) || existing.data.length === 0) {
-            await db.from('commerce_production_jobs').insert({ id: crypto.randomUUID(), order_item_id: item.id, status: 'queued' });
-          }
-        }
-      }
-    }
     await load();
   }
 

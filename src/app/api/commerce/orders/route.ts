@@ -1,0 +1,56 @@
+import { randomUUID } from "node:crypto";
+import type { ResultSetHeader, RowDataPacket } from "mysql2";
+import { getSession } from "@/lib/auth/session";
+import { getAuthContext } from "@/lib/auth/service";
+import { hasMinRole } from "@/lib/auth/roles";
+import { selectRows, transaction } from "@/lib/mysql/db";
+
+type OrderRow = RowDataPacket & {
+  id: string; order_number: number; status: string; payment_status: string; channel: string;
+  total: string | number; customer_name: string | null; customer_email: string | null;
+  customer_phone: string | null; created_at: string; items: number;
+};
+
+async function authContext() {
+  const session = await getSession();
+  return session ? getAuthContext(session.user.id) : null;
+}
+
+export async function GET() {
+  const auth = await authContext();
+  if (!auth) return Response.json({ error: "Sessão inválida." }, { status: 401 });
+  const orders = await selectRows<OrderRow[]>(
+    `SELECT o.id,o.order_number,o.status,o.payment_status,o.channel,o.total,o.customer_name,o.customer_email,o.customer_phone,o.created_at,COUNT(i.id) AS items
+       FROM commerce_orders o LEFT JOIN commerce_order_items i ON i.order_id=o.id
+      WHERE o.account_id=? GROUP BY o.id ORDER BY o.created_at DESC LIMIT 200`, [auth.account.id],
+  );
+  return Response.json({ orders });
+}
+
+export async function PATCH(request: Request) {
+  const auth = await authContext();
+  if (!auth) return Response.json({ error: "Sessão inválida." }, { status: 401 });
+  if (!hasMinRole(auth.profile.account_role, "agent")) return Response.json({ error: "Sem permissão para gerir encomendas." }, { status: 403 });
+  const body = await request.json().catch(() => null) as { id?: string; status?: string; paymentStatus?: string; notes?: string } | null;
+  const allowed = new Set(["pending_payment", "paid", "in_production", "quality_check", "ready_to_ship", "shipped", "delivered", "cancelled", "refunded"]);
+  if (!body?.id || !body.status || !allowed.has(body.status)) return Response.json({ error: "Estado de encomenda inválido." }, { status: 400 });
+  const orderId = body.id;
+  const nextStatus = body.status;
+  try {
+    await transaction(async (connection) => {
+      const [rows] = await connection.execute<(RowDataPacket & { status: string; payment_status: string })[]>("SELECT status,payment_status FROM commerce_orders WHERE id=? AND account_id=? FOR UPDATE", [orderId, auth.account.id]);
+      const current = rows[0]; if (!current) throw new Error("NOT_FOUND");
+      const payment = body.paymentStatus && ["pending", "paid", "partially_paid", "refunded", "failed", "cancelled"].includes(body.paymentStatus) ? body.paymentStatus : current.payment_status;
+      await connection.execute<ResultSetHeader>("UPDATE commerce_orders SET status=?,payment_status=?,paid_at=CASE WHEN ?='paid' AND paid_at IS NULL THEN UTC_TIMESTAMP(3) ELSE paid_at END WHERE id=?", [nextStatus, payment, payment, orderId]);
+      await connection.execute("INSERT INTO commerce_order_history(id,account_id,order_id,actor_user_id,event_type,previous_value,new_value,notes) VALUES(?,?,?,?,?,?,?,?)", [randomUUID(), auth.account.id, orderId, auth.user.id, "status_changed", current.status, nextStatus, String(body.notes || "") || null]);
+      if (nextStatus === "in_production") {
+        const [items] = await connection.execute<(RowDataPacket & { id: string })[]>("SELECT id FROM commerce_order_items WHERE order_id=?", [orderId]);
+        for (const item of items) {
+          const [existing] = await connection.execute<RowDataPacket[]>("SELECT id FROM commerce_production_jobs WHERE order_item_id=? LIMIT 1", [item.id]);
+          if (!existing[0]) await connection.execute("INSERT INTO commerce_production_jobs(id,account_id,order_item_id,status) VALUES(?,?,?,'queued')", [randomUUID(), auth.account.id, item.id]);
+        }
+      }
+    });
+    return Response.json({ success: true });
+  } catch (error) { if (error instanceof Error && error.message === "NOT_FOUND") return Response.json({ error: "Encomenda não encontrada." }, { status: 404 }); console.error("[commerce-order-update]", error); return Response.json({ error: "Não foi possível atualizar a encomenda." }, { status: 500 }); }
+}
