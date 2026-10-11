@@ -13,7 +13,7 @@ export function CustomerAccount() {
   const [data, setData] = useState<{ customer: { name: string | null; email: string }; orders: Order[]; requests: Request[] } | null>(null);
   const [loading, setLoading] = useState(true); const [error, setError] = useState(""); const [sending, setSending] = useState(false);
   async function load() { setLoading(true); const response = await fetch("/api/storefront/account/orders", { cache: "no-store" }); const payload = await response.json().catch(() => ({})) as typeof data & { error?: string }; if (response.ok) setData(payload); else setError(payload.error || "Não foi possível abrir a conta."); setLoading(false); }
-  useEffect(() => { void load(); }, []);
+  useEffect(() => { const timer = window.setTimeout(() => void load(), 0); return () => window.clearTimeout(timer); }, []);
   async function signIn(event: React.FormEvent<HTMLFormElement>) { event.preventDefault(); setSending(true); setError(""); const form = new FormData(event.currentTarget); const response = await fetch("/api/storefront/account/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: form.get("email"), orderNumber: form.get("orderNumber") }) }); const payload = await response.json().catch(() => ({})) as { error?: string }; setSending(false); if (!response.ok) { setError(payload.error || "Não foi possível validar o acesso."); return; } await load(); }
   async function signOut() { await fetch("/api/storefront/account/session", { method: "DELETE" }); setData(null); setError(""); }
   if (loading) return <main className="min-h-screen bg-[#071014] p-10 text-slate-100">A abrir a sua conta…</main>;
