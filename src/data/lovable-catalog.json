@@ -1,0 +1,1174 @@
+{
+  "categories": [
+    {
+      "slug": "casa-organizacao",
+      "name": "Casa & Organização",
+      "image": "/lovable/product-9-R9fAMCkk.jpg"
+    },
+    {
+      "slug": "secretaria-escritorio",
+      "name": "Secretária & Escritório",
+      "image": "/lovable/product-4-Cz_zq3cS.jpg"
+    },
+    {
+      "slug": "tecnologia",
+      "name": "Tecnologia",
+      "image": "/lovable/product-stand-BcuGeJrZ.jpg"
+    },
+    {
+      "slug": "carro",
+      "name": "Carro",
+      "image": "/lovable/product-car-5Gf7ww-7.jpg"
+    },
+    {
+      "slug": "decoracao",
+      "name": "Decoração",
+      "image": "/lovable/product-5-CBk565E3.jpg"
+    },
+    {
+      "slug": "personalizados",
+      "name": "Personalizados",
+      "image": "/lovable/product-7-VU932gR3.jpg"
+    },
+    {
+      "slug": "presentes",
+      "name": "Presentes",
+      "image": "/lovable/product-6-CNNFPMZF.jpg"
+    },
+    {
+      "slug": "empresas",
+      "name": "Empresas",
+      "image": "/lovable/product-11-CwxwymBM.jpg"
+    }
+  ],
+  "products": [
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 98,
+      "added": 1,
+      "id": 1,
+      "slug": "suporte-telemovel",
+      "name": "Suporte de Telemóvel",
+      "price": 12.9,
+      "image": "/lovable/product-1-Dde6SHFT.jpg",
+      "category": "tecnologia",
+      "badge": "Mais vendido",
+      "description": "O lugar certo para o teu telemóvel. Um suporte estável e minimalista, com ângulo confortável para videochamadas e espaço para o cabo de carregamento.",
+      "dimensions": "8 × 9 × 11 cm",
+      "gallery": [
+        "/lovable/product-1-Dde6SHFT.jpg",
+        "/lovable/products-a-DstxeCgh.jpg",
+        "/lovable/product-stand-BcuGeJrZ.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 95,
+      "added": 2,
+      "id": 2,
+      "slug": "organizador-cabos",
+      "name": "Organizador de Cabos",
+      "price": 8.9,
+      "image": "/lovable/product-2-CPMdkI3s.jpg",
+      "category": "casa-organizacao",
+      "badge": "Mais vendido",
+      "description": "Menos confusão, mais espaço. Mantém os cabos arrumados e sempre à mão com um organizador compacto, pensado para acompanhar o teu dia.",
+      "dimensions": "7 × 7 × 3 cm",
+      "gallery": [
+        "/lovable/product-2-CPMdkI3s.jpg",
+        "/lovable/products-b-BifeVagY.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 20,
+      "added": 30,
+      "id": 3,
+      "slug": "suporte-comando",
+      "name": "Suporte para Comando",
+      "price": 14.9,
+      "image": "/lovable/product-3-6gDmKAVq.jpg",
+      "category": "tecnologia",
+      "badge": "Novo",
+      "description": "Um lugar dedicado aos teus comandos. Design discreto, base estável e dois níveis para manter o teu espaço organizado.",
+      "dimensions": "10 × 12 × 18 cm",
+      "gallery": [
+        "/lovable/product-3-6gDmKAVq.jpg",
+        "/lovable/products-c-zLnFLmik.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 90,
+      "added": 4,
+      "id": 4,
+      "slug": "organizador-secretaria",
+      "name": "Organizador de Secretária",
+      "price": 19.9,
+      "image": "/lovable/product-4-Cz_zq3cS.jpg",
+      "category": "secretaria-escritorio",
+      "badge": "Mais vendido",
+      "description": "Tudo o que precisas, no sítio certo. Compartimentos versáteis e uma textura escultural que transforma a tua secretária.",
+      "dimensions": "15 × 10 × 12 cm",
+      "gallery": [
+        "/lovable/product-4-Cz_zq3cS.jpg",
+        "/lovable/product-drawer-DTKx3j_3.jpg",
+        "/lovable/products-a-DstxeCgh.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 88,
+      "added": 5,
+      "id": 5,
+      "slug": "vaso-geometrico",
+      "name": "Vaso Geométrico",
+      "price": 16.9,
+      "image": "/lovable/product-5-CBk565E3.jpg",
+      "category": "decoracao",
+      "badge": "Mais vendido",
+      "sizes": [
+        {
+          "label": "S · 16 cm",
+          "delta": -3
+        },
+        {
+          "label": "M · 22 cm",
+          "delta": 0
+        },
+        {
+          "label": "L · 28 cm",
+          "delta": 6
+        }
+      ],
+      "description": "Uma pequena peça de arquitetura para a tua casa. Linhas geométricas e textura de camadas para flores secas ou ramos decorativos. Não indicado para conter água.",
+      "dimensions": "11 × 11 × 22 cm",
+      "gallery": [
+        "/lovable/product-5-CBk565E3.jpg",
+        "/lovable/product-planter-BudddLOK.jpg",
+        "/lovable/products-b-BifeVagY.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 85,
+      "added": 6,
+      "id": 6,
+      "slug": "porta-chaves-personalizado",
+      "name": "Porta-Chaves Personalizado",
+      "price": 9.9,
+      "image": "/lovable/product-6-CNNFPMZF.jpg",
+      "category": "presentes",
+      "badge": "Personalizável",
+      "personalizable": true,
+      "description": "O teu nome, sempre contigo. Um porta-chaves leve e resistente, impresso com o texto que escolheres. Um presente pequeno com muita personalidade.",
+      "dimensions": "7 × 3 × 0,5 cm",
+      "gallery": [
+        "/lovable/product-6-CNNFPMZF.jpg",
+        "/lovable/product-12-qpmwY34U.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 80,
+      "added": 7,
+      "id": 7,
+      "slug": "placa-nome-personalizada",
+      "name": "Placa com Nome Personalizada",
+      "price": 14.9,
+      "image": "/lovable/product-7-VU932gR3.jpg",
+      "category": "personalizados",
+      "badge": "Personalizável",
+      "personalizable": true,
+      "sizes": [
+        {
+          "label": "Até 15 cm",
+          "delta": -2
+        },
+        {
+          "label": "Até 25 cm",
+          "delta": 0
+        },
+        {
+          "label": "Até 35 cm",
+          "delta": 7
+        }
+      ],
+      "description": "Dá forma ao teu nome. Letras tridimensionais com base integrada para a secretária, um quarto ou aquele presente especial.",
+      "dimensions": "Até 25 × 4 × 8 cm",
+      "gallery": [
+        "/lovable/product-7-VU932gR3.jpg",
+        "/lovable/products-c-zLnFLmik.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 20,
+      "added": 28,
+      "id": 8,
+      "slug": "suporte-auriculares",
+      "name": "Suporte para Auriculares",
+      "price": 22.9,
+      "image": "/lovable/product-8-BJ53jI5K.jpg",
+      "category": "tecnologia",
+      "badge": "Novo",
+      "description": "Os teus auriculares merecem um bom descanso. Uma estrutura em arco, elegante e estável, que organiza sem ocupar demasiado espaço.",
+      "dimensions": "13 × 10 × 24 cm",
+      "gallery": [
+        "/lovable/product-8-BJ53jI5K.jpg",
+        "/lovable/product-dock-TwtyE30O.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 20,
+      "added": 27,
+      "id": 9,
+      "slug": "organizador-modular",
+      "name": "Organizador Modular",
+      "price": 24.9,
+      "image": "/lovable/product-9-R9fAMCkk.jpg",
+      "category": "casa-organizacao",
+      "badge": "Novo",
+      "description": "Organização à tua medida. Três módulos que encaixam e se combinam para acompanhar o teu espaço e a tua rotina.",
+      "dimensions": "18 × 12 × 12 cm",
+      "gallery": [
+        "/lovable/product-9-R9fAMCkk.jpg",
+        "/lovable/product-drawer-DTKx3j_3.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 70,
+      "added": 10,
+      "id": 10,
+      "slug": "suporte-qr-code",
+      "name": "Suporte QR Code para Mesa",
+      "price": 18.9,
+      "image": "/lovable/product-10-DOnf3qxB.jpg",
+      "category": "empresas",
+      "badge": "Personalizável",
+      "personalizable": true,
+      "description": "O teu menu, contacto ou página à distância de um scan. Um expositor de mesa personalizável com o link do teu negócio. O QR final é validado antes da produção.",
+      "dimensions": "10 × 6 × 14 cm",
+      "gallery": [
+        "/lovable/product-10-DOnf3qxB.jpg",
+        "/lovable/product-signs-DRmGiEmE.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 60,
+      "added": 11,
+      "id": 11,
+      "slug": "logotipo-3d-empresarial",
+      "name": "Logótipo 3D Empresarial",
+      "price": 39.9,
+      "image": "/lovable/product-11-CwxwymBM.jpg",
+      "category": "empresas",
+      "badge": "Empresas",
+      "personalizable": true,
+      "from": true,
+      "description": "A tua marca ganha uma nova dimensão. Logótipos tridimensionais para receções, montras e eventos. O preço final depende das dimensões e complexidade.",
+      "dimensions": "À medida",
+      "gallery": [
+        "/lovable/product-11-CwxwymBM.jpg",
+        "/lovable/product-trophy-DEQXR020.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 65,
+      "added": 12,
+      "id": 12,
+      "slug": "pack-10-brindes",
+      "name": "Pack 10 Brindes Personalizados",
+      "price": 59.9,
+      "image": "/lovable/product-12-qpmwY34U.jpg",
+      "category": "presentes",
+      "badge": "Pack",
+      "personalizable": true,
+      "from": true,
+      "pack": 10,
+      "description": "Dez oportunidades de tornar a tua marca memorável. Um pack de dez porta-chaves personalizados para equipas, eventos ou clientes. Desde 5,99 € por unidade.",
+      "dimensions": "10 peças · até 7 cm cada",
+      "gallery": [
+        "/lovable/product-12-qpmwY34U.jpg",
+        "/lovable/product-6-CNNFPMZF.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 20,
+      "added": 40,
+      "id": 13,
+      "slug": "vaso-suculentas",
+      "name": "Vaso para Suculentas",
+      "price": 11.9,
+      "image": "/lovable/product-planter-BudddLOK.jpg",
+      "category": "casa-organizacao",
+      "badge": "Novo",
+      "sizes": [
+        {
+          "label": "S · 9 cm",
+          "delta": 0
+        },
+        {
+          "label": "M · 12 cm",
+          "delta": 3
+        }
+      ],
+      "description": "Um vaso facetado com base drenante, ideal para suculentas e pequenas plantas de interior. Duas cores combinadas para um toque gráfico.",
+      "dimensions": "10 × 10 × 9 cm",
+      "gallery": [
+        "/lovable/product-planter-BudddLOK.jpg",
+        "/lovable/product-5-CBk565E3.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 78,
+      "added": 14,
+      "id": 14,
+      "slug": "organizador-gaveta",
+      "name": "Organizador de Gaveta",
+      "price": 13.9,
+      "image": "/lovable/product-drawer-DTKx3j_3.jpg",
+      "category": "casa-organizacao",
+      "badge": "Mais vendido",
+      "description": "Compartimentos à medida para canetas, clips e pequenos objetos. Encaixa na maioria das gavetas e mantém tudo no lugar.",
+      "dimensions": "20 × 12 × 4 cm",
+      "gallery": [
+        "/lovable/product-drawer-DTKx3j_3.jpg",
+        "/lovable/product-9-R9fAMCkk.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 76,
+      "added": 15,
+      "id": 15,
+      "slug": "conjunto-bases-copos",
+      "name": "Conjunto 4 Bases para Copos",
+      "price": 9.9,
+      "image": "/lovable/product-drawer-DTKx3j_3.jpg",
+      "category": "casa-organizacao",
+      "badge": "Mais vendido",
+      "description": "Quatro bases geométricas antiderrapantes que protegem a mesa com estilo. Personalizáveis com uma inicial.",
+      "dimensions": "4 × 9 × 9 × 0,6 cm",
+      "gallery": [
+        "/lovable/product-drawer-DTKx3j_3.jpg",
+        "/lovable/products-b-BifeVagY.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 20,
+      "added": 38,
+      "id": 16,
+      "slug": "caixa-arrumacao-tampa",
+      "name": "Caixa de Arrumação com Tampa",
+      "price": 15.9,
+      "image": "/lovable/product-9-R9fAMCkk.jpg",
+      "category": "casa-organizacao",
+      "badge": "Novo",
+      "sizes": [
+        {
+          "label": "Pequena",
+          "delta": 0
+        },
+        {
+          "label": "Média",
+          "delta": 5
+        },
+        {
+          "label": "Grande",
+          "delta": 10
+        }
+      ],
+      "description": "Uma caixa modular com tampa encaixável para guardar joias, chaves ou acessórios à vista, sem confusão.",
+      "dimensions": "12 × 12 × 7 cm",
+      "gallery": [
+        "/lovable/product-9-R9fAMCkk.jpg",
+        "/lovable/product-drawer-DTKx3j_3.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 72,
+      "added": 17,
+      "id": 17,
+      "slug": "clips-saco-6",
+      "name": "Clips para Sacos · Pack 6",
+      "price": 6.9,
+      "image": "/lovable/product-2-CPMdkI3s.jpg",
+      "category": "casa-organizacao",
+      "badge": "Pack",
+      "pack": 6,
+      "description": "Seis clips fortes para manter alimentos frescos na despensa. Pequenos, coloridos e reutilizáveis.",
+      "dimensions": "6 × 9 × 2 cm",
+      "gallery": [
+        "/lovable/product-2-CPMdkI3s.jpg",
+        "/lovable/product-drawer-DTKx3j_3.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Por encomenda",
+      "sales": 20,
+      "added": 36,
+      "id": 18,
+      "slug": "suporte-plantas-parede",
+      "name": "Suporte de Plantas de Parede",
+      "price": 17.9,
+      "image": "/lovable/product-planter-BudddLOK.jpg",
+      "category": "decoracao",
+      "badge": "Novo",
+      "description": "Um vaso suspenso de linhas limpas para trazer verde às paredes. Fixação escondida e reservatório de proteção.",
+      "dimensions": "14 × 9 × 15 cm",
+      "gallery": [
+        "/lovable/product-planter-BudddLOK.jpg",
+        "/lovable/products-c-zLnFLmik.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Grafite",
+        "Off-white"
+      ],
+      "stock": "Em stock",
+      "sales": 84,
+      "added": 19,
+      "id": 19,
+      "slug": "suporte-portatil",
+      "name": "Suporte para Portátil",
+      "price": 29.9,
+      "image": "/lovable/product-stand-BcuGeJrZ.jpg",
+      "category": "secretaria-escritorio",
+      "badge": "Mais vendido",
+      "description": "Eleva o ecrã à altura dos olhos e melhora a ventilação. Estrutura dobrada estável para portáteis até 16 polegadas.",
+      "dimensions": "26 × 22 × 12 cm",
+      "gallery": [
+        "/lovable/product-stand-BcuGeJrZ.jpg",
+        "/lovable/products-a-DstxeCgh.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 20,
+      "added": 35,
+      "id": 20,
+      "slug": "suporte-tablet",
+      "name": "Suporte para Tablet",
+      "price": 16.9,
+      "image": "/lovable/product-stand-BcuGeJrZ.jpg",
+      "category": "tecnologia",
+      "badge": "Novo",
+      "description": "Ângulo de leitura ideal para receitas, séries ou videochamadas. Compatível com tablets até 13 polegadas.",
+      "dimensions": "12 × 10 × 9 cm",
+      "gallery": [
+        "/lovable/product-stand-BcuGeJrZ.jpg",
+        "/lovable/product-1-Dde6SHFT.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Por encomenda",
+      "sales": 20,
+      "added": 34,
+      "id": 21,
+      "slug": "elevador-monitor",
+      "name": "Elevador de Monitor Modular",
+      "price": 34.9,
+      "image": "/lovable/product-stand-BcuGeJrZ.jpg",
+      "category": "secretaria-escritorio",
+      "badge": "Novo",
+      "sizes": [
+        {
+          "label": "50 cm",
+          "delta": 0
+        },
+        {
+          "label": "70 cm",
+          "delta": 9
+        }
+      ],
+      "description": "Pernas modulares para criar uma prateleira por baixo do monitor. Mais ergonomia e espaço para teclado ou cadernos.",
+      "dimensions": "50 × 20 × 9 cm",
+      "gallery": [
+        "/lovable/product-stand-BcuGeJrZ.jpg",
+        "/lovable/product-4-Cz_zq3cS.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 66,
+      "added": 22,
+      "id": 22,
+      "slug": "porta-canetas-geometrico",
+      "name": "Porta-Canetas Geométrico",
+      "price": 10.9,
+      "image": "/lovable/product-4-Cz_zq3cS.jpg",
+      "category": "secretaria-escritorio",
+      "badge": "Personalizável",
+      "personalizable": true,
+      "description": "Uma peça escultural para canetas e pincéis, com o teu nome ou inicial gravada na base.",
+      "dimensions": "8 × 8 × 11 cm",
+      "gallery": [
+        "/lovable/product-4-Cz_zq3cS.jpg",
+        "/lovable/product-5-CBk565E3.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 62,
+      "added": 23,
+      "id": 23,
+      "slug": "placa-secretaria-nome",
+      "name": "Placa de Secretária com Nome",
+      "price": 18.9,
+      "image": "/lovable/product-7-VU932gR3.jpg",
+      "category": "secretaria-escritorio",
+      "badge": "Personalizável",
+      "personalizable": true,
+      "description": "Nome e cargo em relevo para a secretária ou receção. Elegante, legível e feita à tua medida.",
+      "dimensions": "20 × 5 × 6 cm",
+      "gallery": [
+        "/lovable/product-7-VU932gR3.jpg",
+        "/lovable/product-signs-DRmGiEmE.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 82,
+      "added": 24,
+      "id": 24,
+      "slug": "dock-relogio-earbuds",
+      "name": "Dock Relógio e Earbuds",
+      "price": 24.9,
+      "image": "/lovable/product-dock-TwtyE30O.jpg",
+      "category": "tecnologia",
+      "badge": "Mais vendido",
+      "description": "Uma base única para carregar o smartwatch e o estojo dos earbuds lado a lado. Passagem de cabo integrada.",
+      "dimensions": "15 × 7 × 10 cm",
+      "gallery": [
+        "/lovable/product-dock-TwtyE30O.jpg",
+        "/lovable/product-8-BJ53jI5K.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 20,
+      "added": 33,
+      "id": 25,
+      "slug": "organizador-carregadores",
+      "name": "Organizador de Carregadores",
+      "price": 19.9,
+      "image": "/lovable/product-2-CPMdkI3s.jpg",
+      "category": "tecnologia",
+      "badge": "Novo",
+      "description": "Arruma carregadores, transformadores e cabos numa estação compacta com ranhuras para três dispositivos.",
+      "dimensions": "18 × 9 × 8 cm",
+      "gallery": [
+        "/lovable/product-2-CPMdkI3s.jpg",
+        "/lovable/product-dock-TwtyE30O.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 20,
+      "added": 32,
+      "id": 26,
+      "slug": "suporte-comando-consola",
+      "name": "Suporte Duplo para Comando de Consola",
+      "price": 21.9,
+      "image": "/lovable/product-3-6gDmKAVq.jpg",
+      "category": "tecnologia",
+      "badge": "Novo",
+      "description": "Dois comandos de consola sempre prontos, numa base estável e discreta para o móvel da TV.",
+      "dimensions": "16 × 10 × 14 cm",
+      "gallery": [
+        "/lovable/product-3-6gDmKAVq.jpg",
+        "/lovable/product-8-BJ53jI5K.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 20,
+      "added": 42,
+      "id": 27,
+      "slug": "suporte-telemovel-carro",
+      "name": "Suporte de Telemóvel para Carro",
+      "price": 13.9,
+      "image": "/lovable/product-car-5Gf7ww-7.jpg",
+      "category": "carro",
+      "badge": "Novo",
+      "description": "Encaixa na grelha de ventilação e mantém o telemóvel seguro e visível durante a condução.",
+      "dimensions": "9 × 7 × 12 cm",
+      "gallery": [
+        "/lovable/product-car-5Gf7ww-7.jpg",
+        "/lovable/product-1-Dde6SHFT.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Grafite"
+      ],
+      "stock": "Por encomenda",
+      "sales": 20,
+      "added": 41,
+      "id": 28,
+      "slug": "organizador-consola-carro",
+      "name": "Organizador de Consola para Carro",
+      "price": 12.9,
+      "image": "/lovable/product-drawer-DTKx3j_3.jpg",
+      "category": "carro",
+      "badge": "Novo",
+      "description": "Divisórias para moedas, cartões e óculos na consola central. Medidas ajustadas sob pedido.",
+      "dimensions": "Aprox. 15 × 10 × 5 cm",
+      "gallery": [
+        "/lovable/product-drawer-DTKx3j_3.jpg",
+        "/lovable/product-car-5Gf7ww-7.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 58,
+      "added": 29,
+      "id": 29,
+      "slug": "porta-chaves-carro",
+      "name": "Porta-Chaves com Matrícula",
+      "price": 8.9,
+      "image": "/lovable/product-6-CNNFPMZF.jpg",
+      "category": "carro",
+      "badge": "Personalizável",
+      "personalizable": true,
+      "description": "O porta-chaves com a matrícula ou nome do teu carro. Leve, resistente e fácil de identificar.",
+      "dimensions": "8 × 3 × 0,5 cm",
+      "gallery": [
+        "/lovable/product-6-CNNFPMZF.jpg",
+        "/lovable/product-car-5Gf7ww-7.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 64,
+      "added": 30,
+      "id": 30,
+      "slug": "letras-3d-decorativas",
+      "name": "Letras 3D Decorativas",
+      "price": 7.9,
+      "image": "/lovable/product-7-VU932gR3.jpg",
+      "category": "personalizados",
+      "badge": "Personalizável",
+      "personalizable": true,
+      "from": true,
+      "description": "Letras soltas em relevo para formar nomes ou palavras na parede ou prateleira. Preço por letra.",
+      "dimensions": "10 cm de altura por letra",
+      "gallery": [
+        "/lovable/product-7-VU932gR3.jpg",
+        "/lovable/products-c-zLnFLmik.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 68,
+      "added": 31,
+      "id": 31,
+      "slug": "numero-porta",
+      "name": "Número de Porta",
+      "price": 19.9,
+      "image": "/lovable/product-signs-DRmGiEmE.jpg",
+      "category": "personalizados",
+      "badge": "Personalizável",
+      "personalizable": true,
+      "sizes": [
+        {
+          "label": "Pequeno · 15 cm",
+          "delta": 0
+        },
+        {
+          "label": "Grande · 25 cm",
+          "delta": 8
+        }
+      ],
+      "description": "O número da tua casa em relevo, com furos de fixação. Em PETG fica preparado para exterior abrigado.",
+      "dimensions": "20 × 11 × 1 cm",
+      "gallery": [
+        "/lovable/product-signs-DRmGiEmE.jpg",
+        "/lovable/product-7-VU932gR3.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 55,
+      "added": 32,
+      "id": 32,
+      "slug": "topper-bolo",
+      "name": "Topper para Bolo",
+      "price": 9.9,
+      "image": "/lovable/product-7-VU932gR3.jpg",
+      "category": "presentes",
+      "badge": "Personalizável",
+      "personalizable": true,
+      "description": "Um nome, idade ou mensagem para coroar o bolo. Reutilizável e pensado para aniversários e casamentos.",
+      "dimensions": "Até 16 × 12 cm",
+      "gallery": [
+        "/lovable/product-7-VU932gR3.jpg",
+        "/lovable/product-6-CNNFPMZF.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Off-white",
+        "Azul elétrico"
+      ],
+      "stock": "Por encomenda",
+      "sales": 20,
+      "added": 31,
+      "id": 33,
+      "slug": "candeeiro-geometrico",
+      "name": "Abajur Geométrico",
+      "price": 27.9,
+      "image": "/lovable/product-5-CBk565E3.jpg",
+      "category": "decoracao",
+      "badge": "Novo",
+      "description": "Abajur facetado que cria padrões de luz suaves. Para casquilho E14 com lâmpada LED (não incluída).",
+      "dimensions": "15 × 15 × 18 cm",
+      "gallery": [
+        "/lovable/product-5-CBk565E3.jpg",
+        "/lovable/product-planter-BudddLOK.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 63,
+      "added": 34,
+      "id": 34,
+      "slug": "placa-wifi",
+      "name": "Placa Wi-Fi Personalizada",
+      "price": 14.9,
+      "image": "/lovable/product-signs-DRmGiEmE.jpg",
+      "category": "decoracao",
+      "badge": "Personalizável",
+      "personalizable": true,
+      "description": "Nome da rede em relevo e QR de ligação para convidados ou clientes. Prática e decorativa.",
+      "dimensions": "10 × 6 × 12 cm",
+      "gallery": [
+        "/lovable/product-signs-DRmGiEmE.jpg",
+        "/lovable/product-10-DOnf3qxB.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 57,
+      "added": 35,
+      "id": 35,
+      "slug": "trofeu-geometrico",
+      "name": "Troféu Geométrico Personalizado",
+      "price": 24.9,
+      "image": "/lovable/product-trophy-DEQXR020.jpg",
+      "category": "presentes",
+      "badge": "Personalizável",
+      "personalizable": true,
+      "sizes": [
+        {
+          "label": "20 cm",
+          "delta": 0
+        },
+        {
+          "label": "30 cm",
+          "delta": 10
+        }
+      ],
+      "description": "Um troféu facetado com texto gravado na base. Para torneios, prémios internos ou uma conquista pessoal.",
+      "dimensions": "8 × 8 × 20 cm",
+      "gallery": [
+        "/lovable/product-trophy-DEQXR020.jpg",
+        "/lovable/product-11-CwxwymBM.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 52,
+      "added": 36,
+      "id": 36,
+      "slug": "porta-menus-mesa",
+      "name": "Porta-Menus de Mesa",
+      "price": 12.9,
+      "image": "/lovable/product-10-DOnf3qxB.jpg",
+      "category": "empresas",
+      "badge": "Empresas",
+      "description": "Suporte vertical para menus A5 ou cartões de promoção, com o logótipo do restaurante em relevo.",
+      "dimensions": "16 × 6 × 22 cm",
+      "gallery": [
+        "/lovable/product-10-DOnf3qxB.jpg",
+        "/lovable/product-signs-DRmGiEmE.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 50,
+      "added": 37,
+      "id": 37,
+      "slug": "numeros-mesa-10",
+      "name": "Identificadores de Mesa · Pack 10",
+      "price": 49.9,
+      "image": "/lovable/product-signs-DRmGiEmE.jpg",
+      "category": "empresas",
+      "badge": "Pack",
+      "pack": 10,
+      "from": true,
+      "description": "Dez números de mesa para restaurantes, eventos e casamentos. Numeração e tipografia à escolha.",
+      "dimensions": "10 peças · 8 × 5 × 10 cm",
+      "gallery": [
+        "/lovable/product-signs-DRmGiEmE.jpg",
+        "/lovable/product-10-DOnf3qxB.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Por encomenda",
+      "sales": 20,
+      "added": 38,
+      "id": 38,
+      "slug": "expositor-balcao",
+      "name": "Expositor de Balcão",
+      "price": 32.9,
+      "image": "/lovable/product-11-CwxwymBM.jpg",
+      "category": "empresas",
+      "badge": "Empresas",
+      "from": true,
+      "description": "Expositor personalizado para produtos, flyers ou cartões, ajustado ao espaço do teu balcão.",
+      "dimensions": "À medida",
+      "gallery": [
+        "/lovable/product-11-CwxwymBM.jpg",
+        "/lovable/product-10-DOnf3qxB.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 20,
+      "added": 39,
+      "id": 39,
+      "slug": "sinaletica-escritorio",
+      "name": "Sinalética para Escritório",
+      "price": 15.9,
+      "image": "/lovable/product-signs-DRmGiEmE.jpg",
+      "category": "empresas",
+      "badge": "Empresas",
+      "personalizable": true,
+      "from": true,
+      "description": "Placas de porta, salas e casas de banho com pictogramas e a identidade da tua empresa.",
+      "dimensions": "15 × 15 × 0,6 cm",
+      "gallery": [
+        "/lovable/product-signs-DRmGiEmE.jpg",
+        "/lovable/product-11-CwxwymBM.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Por encomenda",
+      "sales": 20,
+      "added": 40,
+      "id": 40,
+      "slug": "prototipo-rapido",
+      "name": "Protótipo Rápido 3D",
+      "price": 49.9,
+      "image": "/lovable/product-11-CwxwymBM.jpg",
+      "category": "empresas",
+      "badge": "Empresas",
+      "from": true,
+      "description": "Materializa a tua ideia para testar forma, encaixe e escala antes da produção. Preço final sob orçamento.",
+      "dimensions": "À medida",
+      "gallery": [
+        "/lovable/product-11-CwxwymBM.jpg",
+        "/lovable/product-stand-BcuGeJrZ.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 48,
+      "added": 41,
+      "id": 41,
+      "slug": "pack-25-brindes",
+      "name": "Pack 25 Brindes de Marca",
+      "price": 124.9,
+      "image": "/lovable/product-12-qpmwY34U.jpg",
+      "category": "empresas",
+      "badge": "Pack",
+      "personalizable": true,
+      "from": true,
+      "pack": 25,
+      "description": "25 porta-chaves com o teu logótipo para eventos e clientes. Desde 5,00 € por unidade.",
+      "dimensions": "25 peças · até 7 cm cada",
+      "gallery": [
+        "/lovable/product-12-qpmwY34U.jpg",
+        "/lovable/product-6-CNNFPMZF.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Em stock",
+      "sales": 20,
+      "added": 42,
+      "id": 42,
+      "slug": "pack-50-brindes",
+      "name": "Pack 50 Brindes de Marca",
+      "price": 229.9,
+      "image": "/lovable/product-12-qpmwY34U.jpg",
+      "category": "empresas",
+      "badge": "Pack",
+      "personalizable": true,
+      "from": true,
+      "pack": 50,
+      "description": "50 brindes personalizados com a tua identidade. Desde 4,60 € por unidade.",
+      "dimensions": "50 peças · até 7 cm cada",
+      "gallery": [
+        "/lovable/product-12-qpmwY34U.jpg",
+        "/lovable/product-11-CwxwymBM.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Por encomenda",
+      "sales": 20,
+      "added": 43,
+      "id": 43,
+      "slug": "pack-100-brindes",
+      "name": "Pack 100 Brindes de Marca",
+      "price": 399.9,
+      "image": "/lovable/product-12-qpmwY34U.jpg",
+      "category": "empresas",
+      "badge": "Pack",
+      "personalizable": true,
+      "from": true,
+      "pack": 100,
+      "description": "Cem peças para grandes eventos e campanhas. Desde 4,00 € por unidade, com prova de cor antes da produção.",
+      "dimensions": "100 peças · até 7 cm cada",
+      "gallery": [
+        "/lovable/product-12-qpmwY34U.jpg",
+        "/lovable/product-11-CwxwymBM.jpg"
+      ]
+    },
+    {
+      "colors": [
+        "Azul elétrico",
+        "Off-white",
+        "Grafite"
+      ],
+      "stock": "Por encomenda",
+      "sales": 20,
+      "added": 44,
+      "id": 44,
+      "slug": "trofeus-evento-10",
+      "name": "Troféus para Eventos · Pack 10",
+      "price": 189.9,
+      "image": "/lovable/product-trophy-DEQXR020.jpg",
+      "category": "empresas",
+      "badge": "Pack",
+      "personalizable": true,
+      "from": true,
+      "pack": 10,
+      "description": "Dez troféus com o nome do evento e categoria gravados. Ideal para torneios, corridas e prémios internos.",
+      "dimensions": "10 peças · 20 cm",
+      "gallery": [
+        "/lovable/product-trophy-DEQXR020.jpg",
+        "/lovable/product-11-CwxwymBM.jpg"
+      ]
+    }
+  ]
+}

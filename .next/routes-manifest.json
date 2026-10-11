@@ -621,6 +621,14 @@
       "namedRegex": "^/privacy/(?<nxtPslug>[^/]+?)(?:/)?$"
     },
     {
+      "page": "/produto/[slug]",
+      "regex": "^/produto/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPslug": "nxtPslug"
+      },
+      "namedRegex": "^/produto/(?<nxtPslug>[^/]+?)(?:/)?$"
+    },
+    {
       "page": "/profissionais/[professional]",
       "regex": "^/profissionais/([^/]+?)(?:/)?$",
       "routeKeys": {
@@ -900,6 +908,12 @@
       "namedRegex": "^/api/clinic/external\\-calendars(?:/)?$"
     },
     {
+      "page": "/api/commerce/catalog/import-lovable",
+      "regex": "^/api/commerce/catalog/import\\-lovable(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/commerce/catalog/import\\-lovable(?:/)?$"
+    },
+    {
       "page": "/api/commerce/products",
       "regex": "^/api/commerce/products(?:/)?$",
       "routeKeys": {},
@@ -1140,6 +1154,12 @@
       "namedRegex": "^/api/storefront/orders(?:/)?$"
     },
     {
+      "page": "/api/storefront/requests",
+      "regex": "^/api/storefront/requests(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/storefront/requests(?:/)?$"
+    },
+    {
       "page": "/api/system/health",
       "regex": "^/api/system/health(?:/)?$",
       "routeKeys": {},
@@ -1362,6 +1382,12 @@
       "namedRegex": "^/business\\-hub/goals(?:/)?$"
     },
     {
+      "page": "/checkout",
+      "regex": "^/checkout(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/checkout(?:/)?$"
+    },
+    {
       "page": "/commerce",
       "regex": "^/commerce(?:/)?$",
       "routeKeys": {},
@@ -1398,6 +1424,12 @@
       "namedRegex": "^/commerce/produtos(?:/)?$"
     },
     {
+      "page": "/contactos",
+      "regex": "^/contactos(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/contactos(?:/)?$"
+    },
+    {
       "page": "/contacts",
       "regex": "^/contacts(?:/)?$",
       "routeKeys": {},
@@ -1408,6 +1440,24 @@
       "regex": "^/dashboard(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/dashboard(?:/)?$"
+    },
+    {
+      "page": "/empresas",
+      "regex": "^/empresas(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/empresas(?:/)?$"
+    },
+    {
+      "page": "/faq",
+      "regex": "^/faq(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/faq(?:/)?$"
+    },
+    {
+      "page": "/favoritos",
+      "regex": "^/favoritos(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/favoritos(?:/)?$"
     },
     {
       "page": "/finance",
@@ -1476,6 +1526,18 @@
       "namedRegex": "^/notifications(?:/)?$"
     },
     {
+      "page": "/orcamento",
+      "regex": "^/orcamento(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/orcamento(?:/)?$"
+    },
+    {
+      "page": "/personalizados",
+      "regex": "^/personalizados(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/personalizados(?:/)?$"
+    },
+    {
       "page": "/pipelines",
       "regex": "^/pipelines(?:/)?$",
       "routeKeys": {},
@@ -1504,6 +1566,12 @@
       "regex": "^/private\\-management(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/private\\-management(?:/)?$"
+    },
+    {
+      "page": "/produtos",
+      "regex": "^/produtos(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/produtos(?:/)?$"
     },
     {
       "page": "/referrals",
@@ -1570,6 +1638,12 @@
       "regex": "^/sitemap\\.xml(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/sitemap\\.xml(?:/)?$"
+    },
+    {
+      "page": "/sobre",
+      "regex": "^/sobre(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/sobre(?:/)?$"
     },
     {
       "page": "/social-planner",
