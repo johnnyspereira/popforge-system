@@ -37,7 +37,7 @@ export function CommerceManager({ kind }: { kind: Kind }) {
   useEffect(() => { const timer = window.setTimeout(() => void load(), 0); return () => window.clearTimeout(timer); }, [load]);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setError(''); const form = new FormData(event.currentTarget);
+    event.preventDefault(); setError(''); const formElement = event.currentTarget; const form = new FormData(formElement);
     try {
       if (kind === 'products') {
         const id = crypto.randomUUID(), name = String(form.get('name')).trim();
@@ -52,7 +52,7 @@ export function CommerceManager({ kind }: { kind: Kind }) {
         const result = await db.from('commerce_inventory_items').insert({ id: crypto.randomUUID(), sku: String(form.get('sku')).trim(), item_type: String(form.get('type')), name: String(form.get('name')).trim(), material: String(form.get('material') || '').trim() || null, color: String(form.get('color') || '').trim() || null, supplier: String(form.get('supplier') || '').trim() || null, unit: String(form.get('unit')), purchase_total: Number(form.get('cost')), purchased_quantity: quantity, remaining_quantity: quantity, low_stock_threshold: Number(form.get('minimum')), active: true });
         if (result.error) throw new Error(result.error.message);
       }
-      event.currentTarget.reset(); await load();
+      formElement.reset(); await load();
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Não foi possível guardar.'); }
   }
   async function updateOrder(row: Row, value: string, field: 'status' | 'paymentStatus') {
