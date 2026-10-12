@@ -932,6 +932,12 @@
       "namedRegex": "^/api/commerce/quotes(?:/)?$"
     },
     {
+      "page": "/api/commerce/workshop",
+      "regex": "^/api/commerce/workshop(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/commerce/workshop(?:/)?$"
+    },
+    {
       "page": "/api/contacts",
       "regex": "^/api/contacts(?:/)?$",
       "routeKeys": {},
@@ -1446,6 +1452,12 @@
       "regex": "^/commerce/inventario(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/commerce/inventario(?:/)?$"
+    },
+    {
+      "page": "/commerce/oficina",
+      "regex": "^/commerce/oficina(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/commerce/oficina(?:/)?$"
     },
     {
       "page": "/commerce/orcamentos",
