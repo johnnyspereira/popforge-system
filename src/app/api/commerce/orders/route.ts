@@ -6,6 +6,7 @@ import { hasMinRole } from "@/lib/auth/roles";
 import { selectRows, transaction } from "@/lib/mysql/db";
 import { canTransitionOrder, isOrderStatus, isPaymentStatus, ORDER_STATUS_LABELS, stockEffectFor, type StockState } from "@/lib/commerce/order-status";
 import { settleOrderStock } from "@/lib/commerce/stock";
+import { sendOrderUpdateEmail } from "@/lib/commerce/order-communication";
 
 type OrderRow = RowDataPacket & {
   id: string; order_number: number; status: string; payment_status: string; channel: string;
@@ -58,9 +59,10 @@ export async function PATCH(request: Request) {
   if (body.paymentStatus !== undefined && !hasMinRole(auth.profile.account_role, "admin")) return Response.json({ error: "Apenas administradores podem alterar o estado do pagamento." }, { status: 403 });
   const orderId = body.id;
   const notes = String(body.notes || "").trim().slice(0, 2000) || null;
+  const customerUpdates: Array<{ to: string | null; name: string | null; orderNumber: number; kind: "status" | "payment"; value: string }> = [];
   try {
     await transaction(async (connection) => {
-      const [rows] = await connection.execute<(RowDataPacket & { status: string; payment_status: string; stock_state: StockState; order_number: number })[]>("SELECT status,payment_status,stock_state,order_number FROM commerce_orders WHERE id=? AND account_id=? FOR UPDATE", [orderId, auth.account.id]);
+      const [rows] = await connection.execute<(RowDataPacket & { status: string; payment_status: string; stock_state: StockState; order_number: number; customer_email: string | null; customer_name: string | null })[]>("SELECT status,payment_status,stock_state,order_number,customer_email,customer_name FROM commerce_orders WHERE id=? AND account_id=? FOR UPDATE", [orderId, auth.account.id]);
       const current = rows[0]; if (!current) throw new Error("NOT_FOUND");
       const nextStatus = body.status && body.status !== current.status ? body.status : null;
       const nextPayment = body.paymentStatus && body.paymentStatus !== current.payment_status ? body.paymentStatus : null;
@@ -70,6 +72,7 @@ export async function PATCH(request: Request) {
         const effect = stockEffectFor(nextStatus, current.stock_state);
         if (effect) await settleOrderStock(connection, { accountId: auth.account.id, orderId, effect, actorUserId: auth.user.id, reference: `ORDER-${current.order_number}` });
         await connection.execute("INSERT INTO commerce_order_history(id,account_id,order_id,actor_user_id,event_type,previous_value,new_value,notes) VALUES(?,?,?,?,?,?,?,?)", [randomUUID(), auth.account.id, orderId, auth.user.id, "status_changed", current.status, nextStatus, notes]);
+        customerUpdates.push({ to: current.customer_email, name: current.customer_name, orderNumber: current.order_number, kind: "status", value: nextStatus });
         if (nextStatus === "in_production") {
           const [items] = await connection.execute<(RowDataPacket & { id: string })[]>("SELECT id FROM commerce_order_items WHERE order_id=?", [orderId]);
           for (const item of items) {
@@ -81,6 +84,7 @@ export async function PATCH(request: Request) {
       if (nextPayment) {
         await connection.execute<ResultSetHeader>("UPDATE commerce_orders SET payment_status=?,paid_at=CASE WHEN ?='paid' AND paid_at IS NULL THEN UTC_TIMESTAMP(3) ELSE paid_at END WHERE id=?", [nextPayment, nextPayment, orderId]);
         await connection.execute("INSERT INTO commerce_order_history(id,account_id,order_id,actor_user_id,event_type,previous_value,new_value,notes) VALUES(?,?,?,?,?,?,?,?)", [randomUUID(), auth.account.id, orderId, auth.user.id, "payment_changed", current.payment_status, nextPayment, notes]);
+        customerUpdates.push({ to: current.customer_email, name: current.customer_name, orderNumber: current.order_number, kind: "payment", value: nextPayment });
       }
       const trackingCode = body.trackingCode === undefined ? undefined : String(body.trackingCode).trim().slice(0, 160) || null;
       const deliveryStatus = body.deliveryStatus === undefined ? undefined : body.deliveryStatus;
@@ -91,6 +95,7 @@ export async function PATCH(request: Request) {
       }
       if (!nextStatus && !nextPayment && trackingCode === undefined && deliveryStatus === undefined && estimatedDispatchAt === undefined) throw new Error("UNCHANGED");
     });
+    await Promise.all(customerUpdates.map(update => sendOrderUpdateEmail(update)));
     return Response.json({ success: true });
   } catch (error) {
     const code = error instanceof Error ? error.message : "";
