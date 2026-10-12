@@ -61,7 +61,7 @@ export function CommerceManager({ kind }: { kind: Kind }) {
 
   async function createInventory(form: FormData) {
     const quantity = Number(form.get('quantity'));
-    const result = await db.from('commerce_inventory_items').insert({ id: crypto.randomUUID(), sku: String(form.get('sku')), item_type: String(form.get('type')), name: String(form.get('name')), unit: String(form.get('unit')), purchase_total: Number(form.get('cost')), purchased_quantity: quantity, remaining_quantity: quantity, low_stock_threshold: Number(form.get('minimum')), active: true });
+    const result = await db.from('commerce_inventory_items').insert({ id: crypto.randomUUID(), sku: String(form.get('sku')), item_type: String(form.get('type')), name: String(form.get('name')), material: String(form.get('material') || '') || null, color: String(form.get('color') || '') || null, supplier: String(form.get('supplier') || '') || null, unit: String(form.get('unit')), purchase_total: Number(form.get('cost')), purchased_quantity: quantity, remaining_quantity: quantity, low_stock_threshold: Number(form.get('minimum')), active: true });
     if (result.error) throw new Error(result.error.message);
   }
 
@@ -89,10 +89,10 @@ export function CommerceManager({ kind }: { kind: Kind }) {
 
   return <div className="space-y-6 p-4 sm:p-6 lg:p-8">
     <header><p className="text-sm font-semibold text-cyan-600">POPForge Commerce</p><h1 className="text-3xl font-semibold">{current.title}</h1></header>
-    {(kind === 'products' || kind === 'inventory') && <Card><CardHeader><CardTitle>{kind === 'products' ? 'Novo produto' : 'Novo item de stock'}</CardTitle></CardHeader><CardContent>
+    {(kind === 'products' || kind === 'inventory') && <Card><CardHeader><CardTitle>{kind === 'products' ? 'Novo produto' : 'Novo material de produÃ§Ã£o'}</CardTitle></CardHeader><CardContent>
       <form onSubmit={submit} className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="space-y-2"><Label>Nome</Label><Input name="name" required /></div>
-        <div className="space-y-2"><Label>SKU</Label><Input name="sku" required /></div>
+        <div className="space-y-2"><Label>{kind === 'products' ? 'SKU' : 'CÃ³digo / SKU interno'}</Label><Input name="sku" required /></div>
         {kind === 'products' ? <><div className="space-y-2"><Label>Preço (€)</Label><Input name="price" type="number" min="0" step="0.01" required /></div><div className="space-y-2"><Label>Stock</Label><Input name="stock" type="number" min="0" step="1" required /></div><div className="space-y-2 md:col-span-2 xl:col-span-3"><Label>Descrição</Label><Input name="description" /></div></> : <><div className="space-y-2"><Label>Tipo</Label><select name="type" className="h-8 w-full rounded-lg border bg-background px-2"><option value="filament">Filamento</option><option value="packaging">Embalagem</option><option value="consumable">Consumível</option><option value="finished_product">Produto acabado</option></select></div><div className="space-y-2"><Label>Unidade</Label><select name="unit" className="h-8 w-full rounded-lg border bg-background px-2"><option value="gram">Grama</option><option value="unit">Unidade</option><option value="milliliter">Mililitro</option><option value="meter">Metro</option></select></div><div className="space-y-2"><Label>Quantidade</Label><Input name="quantity" type="number" min="0" step="0.001" required /></div><div className="space-y-2"><Label>Custo total (€)</Label><Input name="cost" type="number" min="0" step="0.01" required /></div><div className="space-y-2"><Label>Stock mínimo</Label><Input name="minimum" type="number" min="0" step="0.001" defaultValue="0" /></div></>}
         <div className="flex items-end"><Button className="w-full" type="submit">Guardar</Button></div>
       </form>
