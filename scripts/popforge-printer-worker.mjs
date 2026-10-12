@@ -2,6 +2,25 @@
 // Runs on a machine in the printer LAN (not on cPanel). It reads a
 // Moonraker/Klipper-compatible status endpoint and sends one-way, signed
 // telemetry to POPForge. Keep the key out of source control.
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// Node does not load .env files by itself. The Windows installer places the
+// file beside this worker, while existing process variables keep precedence.
+const envPath = path.join(path.dirname(fileURLToPath(import.meta.url)), '.env');
+if (fs.existsSync(envPath)) {
+  for (const rawLine of fs.readFileSync(envPath, 'utf8').split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) continue;
+    const separator = line.indexOf('=');
+    if (separator < 1) continue;
+    const key = line.slice(0, separator).trim();
+    let value = line.slice(separator + 1).trim();
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) value = value.slice(1, -1);
+    if (process.env[key] === undefined) process.env[key] = value;
+  }
+}
 const required = ['POPFORGE_URL', 'POPFORGE_PRINTER_ID', 'POPFORGE_PRINTER_KEY'];
 for (const name of required) if (!process.env[name]) throw new Error(`Missing ${name}`);
 
