@@ -26,6 +26,10 @@ type ProductRow = RowDataPacket & {
   material: string | null;
   color: string | null;
   weight_grams: string | null;
+  production_minutes: string | null;
+  production_grams: string | null;
+  production_material_sku: string | null;
+  production_printer_name: string | null;
 };
 
 function clean(value: unknown, max = 500) {
@@ -74,7 +78,7 @@ export async function GET() {
     return Response.json({ error: "Sessão inválida." }, { status: 401 });
   const products = await selectRows<ProductRow[]>(
     `SELECT p.id,p.name,p.slug,p.description,p.image_url,p.status,p.product_type,p.customizable,p.featured,p.created_at,
-            v.id AS variant_id,v.sku,v.name AS variant_name,v.price,v.cost_price,v.stock_quantity,v.track_stock,v.material,v.color,v.weight_grams
+            v.id AS variant_id,v.sku,v.name AS variant_name,v.price,v.cost_price,v.stock_quantity,v.track_stock,v.material,v.color,v.weight_grams,v.production_minutes,v.production_grams,v.production_material_sku,v.production_printer_name
        FROM commerce_products p
        JOIN commerce_product_variants v ON v.product_id=p.id AND v.active=TRUE
       WHERE p.account_id=? ORDER BY p.created_at DESC`,
@@ -130,8 +134,8 @@ export async function POST(request: Request) {
         ],
       );
       await connection.execute(
-        `INSERT INTO commerce_product_variants(id,account_id,product_id,sku,name,material,color,price,cost_price,weight_grams,stock_quantity,track_stock,active)
-         VALUES(?,?,?,?,?,?,?,?,?,?,?,?,TRUE)`,
+        `INSERT INTO commerce_product_variants(id,account_id,product_id,sku,name,material,color,price,cost_price,weight_grams,production_minutes,production_grams,production_material_sku,production_printer_name,stock_quantity,track_stock,active)
+         VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,TRUE)`,
         [
           variantId,
           auth.account.id,
@@ -143,6 +147,10 @@ export async function POST(request: Request) {
           price,
           Number(body?.costPrice) || null,
           Number(body?.weightGrams) || null,
+          Number(body?.productionMinutes) || null,
+          Number(body?.productionGrams) || null,
+          clean(body?.productionMaterialSku, 100).toUpperCase() || null,
+          clean(body?.productionPrinterName, 120) || null,
           stock,
           body?.trackStock !== false,
         ],
@@ -196,7 +204,7 @@ export async function PATCH(request: Request) {
       );
       if (!product.affectedRows) throw new Error("PRODUCT_NOT_FOUND");
       await connection.execute(
-        `UPDATE commerce_product_variants SET sku=?,name=?,material=?,color=?,price=?,cost_price=?,weight_grams=?,stock_quantity=?,track_stock=? WHERE id=? AND product_id=? AND account_id=?`,
+        `UPDATE commerce_product_variants SET sku=?,name=?,material=?,color=?,price=?,cost_price=?,weight_grams=?,production_minutes=?,production_grams=?,production_material_sku=?,production_printer_name=?,stock_quantity=?,track_stock=? WHERE id=? AND product_id=? AND account_id=?`,
         [
           sku,
           clean(body?.variantName, 160) || "Padrão",
@@ -205,6 +213,10 @@ export async function PATCH(request: Request) {
           Number(body?.price) || 0,
           Number(body?.costPrice) || null,
           Number(body?.weightGrams) || null,
+          Number(body?.productionMinutes) || null,
+          Number(body?.productionGrams) || null,
+          clean(body?.productionMaterialSku, 100).toUpperCase() || null,
+          clean(body?.productionPrinterName, 120) || null,
           Math.max(0, Number(body?.stock) || 0),
           body?.trackStock !== false,
           variantId,

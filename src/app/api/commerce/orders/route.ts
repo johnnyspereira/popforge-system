@@ -7,6 +7,7 @@ import { selectRows, transaction } from "@/lib/mysql/db";
 import { canTransitionOrder, isOrderStatus, isPaymentStatus, ORDER_STATUS_LABELS, stockEffectFor, type StockState } from "@/lib/commerce/order-status";
 import { settleOrderStock } from "@/lib/commerce/stock";
 import { sendOrderUpdateEmail } from "@/lib/commerce/order-communication";
+import { createProductionPlan } from "@/lib/commerce/production-plan";
 
 type OrderRow = RowDataPacket & {
   id: string; order_number: number; status: string; payment_status: string; channel: string;
@@ -74,11 +75,7 @@ export async function PATCH(request: Request) {
         await connection.execute("INSERT INTO commerce_order_history(id,account_id,order_id,actor_user_id,event_type,previous_value,new_value,notes) VALUES(?,?,?,?,?,?,?,?)", [randomUUID(), auth.account.id, orderId, auth.user.id, "status_changed", current.status, nextStatus, notes]);
         customerUpdates.push({ to: current.customer_email, name: current.customer_name, orderNumber: current.order_number, kind: "status", value: nextStatus });
         if (nextStatus === "in_production") {
-          const [items] = await connection.execute<(RowDataPacket & { id: string })[]>("SELECT id FROM commerce_order_items WHERE order_id=?", [orderId]);
-          for (const item of items) {
-            const [existing] = await connection.execute<RowDataPacket[]>("SELECT id FROM commerce_production_jobs WHERE order_item_id=? LIMIT 1", [item.id]);
-            if (!existing[0]) await connection.execute("INSERT INTO commerce_production_jobs(id,account_id,order_item_id,status) VALUES(?,?,?,'queued')", [randomUUID(), auth.account.id, item.id]);
-          }
+          await createProductionPlan(connection, { accountId: auth.account.id, orderId, actorUserId: auth.user.id });
         }
       }
       if (nextPayment) {

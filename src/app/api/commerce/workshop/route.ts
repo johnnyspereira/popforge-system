@@ -17,7 +17,7 @@ export async function GET() {
   const id = auth.account.id;
   const [inventory, jobs, orders, report, printers] = await Promise.all([
     selectRows<RowDataPacket[]>("SELECT id,sku,item_type,name,material,color,unit,purchase_total,purchased_quantity,remaining_quantity,low_stock_threshold,active FROM commerce_inventory_items WHERE account_id=? AND active=TRUE ORDER BY item_type,name", [id]),
-    selectRows<RowDataPacket[]>(`SELECT j.id,j.title,j.status,j.priority,j.due_date,j.printer_name,j.estimated_grams,j.actual_grams,j.estimated_minutes,j.actual_minutes,j.actual_labor_minutes,j.actual_energy_cost,j.actual_other_cost,j.internal_notes,j.created_at,o.order_number,i.product_name
+    selectRows<RowDataPacket[]>(`SELECT j.id,j.title,j.status,j.priority,j.due_date,j.printer_name,j.estimated_grams,j.actual_grams,j.estimated_minutes,j.actual_minutes,j.actual_labor_minutes,j.actual_labor_cost,j.actual_energy_cost,j.actual_other_cost,j.internal_notes,j.created_at,o.order_number,i.product_name
       FROM commerce_production_jobs j LEFT JOIN commerce_orders o ON o.id=j.order_id LEFT JOIN commerce_order_items i ON i.id=j.order_item_id
       WHERE j.account_id=? ORDER BY FIELD(j.status,'printing','preparing','queued','post_processing','quality_check','completed','failed'),FIELD(j.priority,'urgent','high','normal','low'),j.due_date IS NULL,j.due_date,j.created_at DESC LIMIT 200`, [id]),
     selectRows<RowDataPacket[]>("SELECT id,order_number,customer_name,customer_email,total,payment_status,status,created_at FROM commerce_orders WHERE account_id=? ORDER BY created_at DESC LIMIT 100", [id]),
@@ -25,7 +25,7 @@ export async function GET() {
       (SELECT COALESCE(SUM(total),0) FROM commerce_orders WHERE account_id=? AND payment_status='paid') AS paid_revenue,
       (SELECT COALESCE(SUM(total),0) FROM commerce_orders WHERE account_id=? AND payment_status IN ('pending','partially_paid')) AS pending_revenue,
       (SELECT COALESCE(SUM(quantity*unit_cost),0) FROM commerce_production_material_usage WHERE account_id=? AND usage_type IN ('actual','waste')) AS actual_material_cost,
-      (SELECT COALESCE(SUM(COALESCE(actual_energy_cost,0)+COALESCE(actual_other_cost,0)),0) FROM commerce_production_jobs WHERE account_id=?) AS actual_other_cost,
+      (SELECT COALESCE(SUM(COALESCE(actual_labor_cost,0)+COALESCE(actual_energy_cost,0)+COALESCE(actual_other_cost,0)),0) FROM commerce_production_jobs WHERE account_id=?) AS actual_other_cost,
       (SELECT COUNT(*) FROM commerce_production_jobs WHERE account_id=? AND status='completed') AS jobs_completed,
       (SELECT COUNT(*) FROM commerce_inventory_items WHERE account_id=? AND active=TRUE AND remaining_quantity<=low_stock_threshold) AS low_stock`, [id, id, id, id, id, id]),
     selectRows<RowDataPacket[]>("SELECT id,name,model,status FROM commerce_printers WHERE account_id=? ORDER BY status='idle' DESC,created_at ASC", [id]),
@@ -86,7 +86,7 @@ async function consumeMaterial(auth: NonNullable<Awaited<ReturnType<typeof authC
     await connection.execute("UPDATE commerce_inventory_items SET remaining_quantity=remaining_quantity-? WHERE id=?", [quantity, inventoryId]);
     await connection.execute("INSERT INTO commerce_production_material_usage(id,account_id,production_job_id,inventory_item_id,usage_type,quantity,unit_cost,item_sku,item_name,notes,recorded_by_user_id) VALUES(?,?,?,?,?,?,?,?,?,?,?)", [randomUUID(), auth.account.id, jobId, inventoryId, usageType, quantity, unitCost, item.sku, item.name, clean(body?.notes, 2000) || null, auth.user.id]);
     await connection.execute("INSERT INTO commerce_stock_movements(id,account_id,inventory_item_id,movement_type,quantity,reference,notes,created_by) VALUES(?,?,?,'exit',?,?,?,?)", [randomUUID(), auth.account.id, inventoryId, -quantity, `PRODUCTION-${jobId}`, `${usageType === "waste" ? "Perda" : "Consumo"}: ${clean(body?.notes, 500) || item.name}`, auth.user.id]);
-    await connection.execute("UPDATE commerce_production_jobs SET actual_grams=COALESCE(actual_grams,0)+?,actual_other_cost=COALESCE(actual_other_cost,0)+? WHERE id=?", [clean(body?.unit, 20) === "gram" ? quantity : 0, quantity * unitCost, jobId]);
+    await connection.execute("UPDATE commerce_production_jobs SET actual_grams=COALESCE(actual_grams,0)+? WHERE id=?", [clean(body?.unit, 20) === "gram" ? quantity : 0, jobId]);
     return { success: true, unitCost, cost: quantity * unitCost };
   });
 }
@@ -97,7 +97,8 @@ async function updateJob(auth: NonNullable<Awaited<ReturnType<typeof authContext
   const actualMinutes = body?.actualMinutes === undefined ? null : Math.max(0, Math.floor(number(body?.actualMinutes)));
   const laborMinutes = body?.laborMinutes === undefined ? null : Math.max(0, Math.floor(number(body?.laborMinutes)));
   const energyCost = body?.energyCost === undefined ? null : Math.max(0, number(body?.energyCost));
+  const laborCost = body?.laborCost === undefined ? null : Math.max(0, number(body?.laborCost));
   const otherCost = body?.otherCost === undefined ? null : Math.max(0, number(body?.otherCost));
-  const [result] = await transaction(async (connection) => connection.execute<ResultSetHeader>("UPDATE commerce_production_jobs SET status=?,printer_name=?,actual_minutes=COALESCE(?,actual_minutes),actual_labor_minutes=COALESCE(?,actual_labor_minutes),actual_energy_cost=COALESCE(?,actual_energy_cost),actual_other_cost=COALESCE(?,actual_other_cost),internal_notes=?,started_at=CASE WHEN ?='printing' AND started_at IS NULL THEN UTC_TIMESTAMP(3) ELSE started_at END,completed_at=CASE WHEN ? IN ('completed','failed') THEN UTC_TIMESTAMP(3) ELSE completed_at END WHERE id=? AND account_id=?", [status, clean(body?.printerName, 120) || null, actualMinutes, laborMinutes, energyCost, otherCost, clean(body?.notes, 5000) || null, status, status, jobId, auth.account.id]));
+  const [result] = await transaction(async (connection) => connection.execute<ResultSetHeader>("UPDATE commerce_production_jobs SET status=?,printer_name=?,actual_minutes=COALESCE(?,actual_minutes),actual_labor_minutes=COALESCE(?,actual_labor_minutes),actual_labor_cost=COALESCE(?,actual_labor_cost),actual_energy_cost=COALESCE(?,actual_energy_cost),actual_other_cost=COALESCE(?,actual_other_cost),internal_notes=?,started_at=CASE WHEN ?='printing' AND started_at IS NULL THEN UTC_TIMESTAMP(3) ELSE started_at END,completed_at=CASE WHEN ? IN ('completed','failed') THEN UTC_TIMESTAMP(3) ELSE completed_at END WHERE id=? AND account_id=?", [status, clean(body?.printerName, 120) || null, actualMinutes, laborMinutes, laborCost, energyCost, otherCost, clean(body?.notes, 5000) || null, status, status, jobId, auth.account.id]));
   if (!result.affectedRows) throw new Error("JOB_NOT_FOUND"); return { success: true };
 }

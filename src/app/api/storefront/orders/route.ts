@@ -4,6 +4,7 @@ import { transaction } from "@/lib/mysql/db";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { InsufficientStockError, reserveVariantStock } from "@/lib/commerce/stock";
 import { clientIp, resolveStorefrontContact } from "@/lib/commerce/storefront-contact";
+import { createProductionPlan } from "@/lib/commerce/production-plan";
 
 type VariantRow = RowDataPacket & { id: string; account_id: string; product_id: string; sku: string; price: string | number; stock_quantity: string | number; track_stock: boolean | number; product_name: string };
 type CartInput = { variantId: string; quantity: number; customization?: Record<string, unknown> };
@@ -65,6 +66,9 @@ export async function POST(request: Request) {
       if (contact?.reviewRequired) {
         await connection.execute("INSERT INTO commerce_order_history(id,account_id,order_id,event_type,notes,metadata) VALUES(?,?,?,?,?,?)", [randomUUID(), accountId, orderId, "customer_review_required", "O telefone corresponde a um cliente existente com outro e-mail. Confirme manualmente antes de associar.", JSON.stringify({ conflict_contact_id: contact.conflictContactId })]);
       }
+      // The jobs are queued from the product's explicit production defaults.
+      // They are not started until the order is confirmed by the operator.
+      await createProductionPlan(connection, { accountId, orderId, actorUserId: owners[0].owner_user_id });
       return { orderNumber: order.insertId, orderId };
     });
     return Response.json({ success: true, ...result }, { status: 201 });
