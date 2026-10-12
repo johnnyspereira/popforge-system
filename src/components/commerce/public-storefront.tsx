@@ -2,23 +2,634 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArrowRight, Heart, Menu, Minus, PackageCheck, Plus, Search, ShoppingBag, Sparkles, X } from "lucide-react";
-import type { StorefrontCatalog, StorefrontProduct, StorefrontVariant } from "@/lib/commerce/storefront-types";
+import {
+  ArrowRight,
+  Heart,
+  Menu,
+  Minus,
+  PackageCheck,
+  Plus,
+  Search,
+  ShoppingBag,
+  Sparkles,
+  X,
+} from "lucide-react";
+import type {
+  StorefrontCatalog,
+  StorefrontProduct,
+  StorefrontVariant,
+} from "@/lib/commerce/storefront-types";
 
-type CartLine = { product: StorefrontProduct; variant: StorefrontVariant; quantity: number };
-const money = (value: number) => new Intl.NumberFormat("pt-PT", { style: "currency", currency: "EUR" }).format(value);
-const priceOf = (product: StorefrontProduct) => Math.min(...product.variants.map((variant) => variant.price));
+type CartLine = {
+  product: StorefrontProduct;
+  variant: StorefrontVariant;
+  quantity: number;
+};
+const money = (value: number) =>
+  new Intl.NumberFormat("pt-PT", { style: "currency", currency: "EUR" }).format(
+    value,
+  );
+const priceOf = (product: StorefrontProduct) =>
+  Math.min(...product.variants.map((variant) => variant.price));
 
 export function PublicStorefront({ catalog }: { catalog: StorefrontCatalog }) {
-  const [query, setQuery] = useState(""); const [category, setCategory] = useState("all"); const [cart, setCart] = useState<CartLine[]>([]); const [cartOpen, setCartOpen] = useState(false); const [menuOpen, setMenuOpen] = useState(false);
-  const featured = catalog.products.filter((product) => product.featured).slice(0, 4); const hero = featured[0] || catalog.products[0];
-  const visible = useMemo(() => catalog.products.filter((product) => (`${product.name} ${product.description || ""} ${product.category?.name || ""}`).toLowerCase().includes(query.toLowerCase()) && (category === "all" || product.category?.slug === category)), [catalog.products, category, query]);
-  const add = (product: StorefrontProduct, variant = product.variants[0]) => { if (!variant) return; setCart((items) => { const line = items.find((item) => item.variant.id === variant.id); return line ? items.map((item) => item.variant.id === variant.id ? { ...item, quantity: item.quantity + 1 } : item) : [...items, { product, variant, quantity: 1 }]; }); setCartOpen(true); };
-  const update = (id: string, quantity: number) => setCart((items) => quantity < 1 ? items.filter((item) => item.variant.id !== id) : items.map((item) => item.variant.id === id ? { ...item, quantity } : item));
-  const total = cart.reduce((sum, item) => sum + item.variant.price * item.quantity, 0); const count = cart.reduce((sum, item) => sum + item.quantity, 0);
-  return <div className="min-h-screen bg-[#fcfcfa] text-[#161615]"><div className="bg-[#171716] px-4 py-2 text-center text-[11px] font-medium tracking-wide text-white">PRODUÇÃO 3D FEITA EM PORTUGAL · PEÇAS PRONTAS E PROJETOS À MEDIDA</div><header className="sticky top-0 z-40 border-b border-[#e7e5df] bg-[#fcfcfa]/95 backdrop-blur"><div className="mx-auto flex h-[76px] max-w-[1440px] items-center justify-between px-5 lg:px-10"><Link href="/" className="leading-none"><span className="block text-2xl font-black tracking-[-.09em]"><i className="not-italic text-[#e6532f]">POP</i>Forge</span><span className="mt-1 block text-[8px] font-bold tracking-[.24em] text-[#787670] uppercase">Custom 3D Creations</span></Link><nav className="hidden h-full items-center gap-8 text-sm font-semibold lg:flex"><Link href="/produtos" className="hover:text-[#e6532f]">Loja</Link><Link href="/personalizados" className="hover:text-[#e6532f]">Personalizados</Link><Link href="/empresas" className="hover:text-[#e6532f]">Para empresas</Link><Link href="/faq" className="hover:text-[#e6532f]">Como funciona</Link></nav><div className="flex items-center gap-1"><button onClick={() => setMenuOpen((open) => !open)} className="p-2 lg:hidden" aria-label="Abrir menu"><Menu className="size-5" /></button><Link href="/favoritos" className="hidden p-2 sm:block" aria-label="Favoritos"><Heart className="size-5" /></Link><Link href="/minha-conta" className="hidden px-3 text-sm font-semibold sm:block">Conta</Link><button onClick={() => setCartOpen(true)} className="relative ml-1 flex items-center gap-2 rounded-full bg-[#171716] px-4 py-2.5 text-sm font-bold text-white"><ShoppingBag className="size-4" /> Carrinho{count > 0 && <span className="grid size-5 place-items-center rounded-full bg-[#e6532f] text-[10px]">{count}</span>}</button></div></div>{menuOpen && <nav className="border-t border-[#e7e5df] bg-white px-5 py-4 lg:hidden"><div className="grid gap-3 text-sm font-semibold"><Link onClick={() => setMenuOpen(false)} href="/produtos">Loja</Link><Link onClick={() => setMenuOpen(false)} href="/personalizados">Personalizados</Link><Link onClick={() => setMenuOpen(false)} href="/empresas">Para empresas</Link><Link onClick={() => setMenuOpen(false)} href="/minha-conta">A minha conta</Link></div></nav>}</header><main><section className="border-b border-[#e7e5df]"><div className="mx-auto grid max-w-[1440px] lg:grid-cols-[1.05fr_.95fr]"><div className="flex min-h-[480px] flex-col justify-center px-5 py-16 sm:px-10 lg:px-16"><p className="text-xs font-bold tracking-[.18em] text-[#e6532f] uppercase">Design, utilidade e personalidade</p><h1 className="mt-5 max-w-2xl text-5xl font-black leading-[.94] tracking-[-.065em] sm:text-7xl">Objetos que tornam o seu espaço <i className="font-serif font-normal">único.</i></h1><p className="mt-7 max-w-xl text-base leading-7 text-[#64625d] sm:text-lg">Peças 3D para organizar, oferecer e personalizar. Explore o catálogo ou envie-nos uma ideia para produzir à medida.</p><div className="mt-9 flex flex-wrap gap-3"><Link href="/produtos" className="inline-flex items-center gap-2 rounded-full bg-[#e6532f] px-6 py-3.5 text-sm font-bold text-white hover:bg-[#ca4222]">Comprar produtos <ArrowRight className="size-4" /></Link><Link href="/personalizados" className="rounded-full border border-[#cfcac0] px-6 py-3.5 text-sm font-bold hover:border-[#171716]">Criar uma peça</Link></div><div className="mt-12 grid max-w-xl grid-cols-3 gap-4 border-t border-[#dedbd4] pt-6 text-xs"><span><b className="block text-base">3D</b><span className="text-[#6d6a64]">Produção local</span></span><span><b className="block text-base">100%</b><span className="text-[#6d6a64]">Acompanhamento</span></span><span><b className="block text-base">1:1</b><span className="text-[#6d6a64]">Projetos à medida</span></span></div></div><div className="relative min-h-[390px] overflow-hidden bg-[#e8e5dc] lg:min-h-0">{hero?.imageUrl ? <img src={hero.imageUrl} alt={hero.name} className="absolute inset-0 size-full object-cover" /> : <div className="grid size-full place-items-center text-8xl">PF</div>}<div className="absolute inset-x-5 bottom-5 flex items-center justify-between bg-white/95 p-4 backdrop-blur sm:inset-x-8 sm:bottom-8"><div><p className="text-[10px] font-bold tracking-[.15em] text-[#e6532f] uppercase">Seleção da semana</p><Link href={hero ? `/produto/${hero.slug}` : "/produtos"} className="mt-1 block font-bold hover:underline">{hero?.name || "Explorar POPForge"}</Link></div>{hero && <b>{money(priceOf(hero))}</b>}</div></div></div></section><section className="mx-auto max-w-[1440px] px-5 py-14 sm:px-10 lg:px-16"><div className="flex items-end justify-between"><div><p className="text-xs font-bold tracking-[.18em] text-[#e6532f] uppercase">Comprar por coleção</p><h2 className="mt-2 text-3xl font-black tracking-[-.05em]">Encontre o que procura.</h2></div><Link href="/produtos" className="hidden text-sm font-bold underline underline-offset-4 sm:block">Ver todas as coleções</Link></div><div className="mt-7 grid grid-cols-2 gap-3 md:grid-cols-4">{catalog.categories.slice(0, 4).map((item) => <button type="button" key={item.slug} onClick={() => { setCategory(item.slug); document.getElementById("catalogo")?.scrollIntoView({ behavior: "smooth" }); }} className="group relative aspect-[1.12/1] overflow-hidden bg-[#e8e5dc] text-left"><img src={item.imageUrl || "/lovable/product-9-R9fAMCkk.jpg"} alt="" className="size-full object-cover transition duration-500 group-hover:scale-105" /><span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 px-4 py-4 text-sm font-bold text-white">{item.name}</span></button>)}</div></section><section id="catalogo" className="border-y border-[#e7e5df] bg-[#f4f2ed]"><div className="mx-auto max-w-[1440px] px-5 py-16 sm:px-10 lg:px-16"><div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end"><div><p className="text-xs font-bold tracking-[.18em] text-[#e6532f] uppercase">Catálogo</p><h2 className="mt-2 text-4xl font-black tracking-[-.055em]">Peças POPForge</h2></div><label className="relative block w-full lg:max-w-sm"><Search className="absolute top-1/2 left-4 size-4 -translate-y-1/2 text-[#77736b]" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Pesquisar no catálogo" className="h-12 w-full rounded-none border border-[#d9d5cc] bg-white pl-11 pr-4 text-sm outline-none focus:border-[#171716]" /></label></div><div className="mt-7 flex items-center gap-2 overflow-x-auto pb-1"><button onClick={() => setCategory("all")} className={`whitespace-nowrap border px-4 py-2 text-sm font-semibold ${category === "all" ? "border-[#171716] bg-[#171716] text-white" : "border-[#d6d1c7] bg-white"}`}>Tudo</button>{catalog.categories.map((item) => <button key={item.slug} onClick={() => setCategory(item.slug)} className={`whitespace-nowrap border px-4 py-2 text-sm font-semibold ${category === item.slug ? "border-[#171716] bg-[#171716] text-white" : "border-[#d6d1c7] bg-white"}`}>{item.name}</button>)}</div><div className="mt-9 grid gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{visible.map((product) => <ProductCard key={product.id} product={product} onAdd={add} />)}</div>{visible.length === 0 && <p className="py-16 text-center text-sm text-[#6d6a64]">Não encontrámos produtos com estes filtros.</p>}</div></section><section className="mx-auto grid max-w-[1440px] gap-10 px-5 py-16 sm:px-10 lg:grid-cols-[.85fr_1.15fr] lg:px-16 lg:py-24"><div className="bg-[#e6532f] p-8 text-white sm:p-12"><Sparkles className="size-7" /><p className="mt-16 text-xs font-bold tracking-[.18em] uppercase">Feito para si</p><h2 className="mt-3 max-w-sm text-4xl font-black leading-none tracking-[-.05em]">A sua ideia não tem de caber num catálogo.</h2></div><div className="flex flex-col justify-center"><p className="text-lg leading-8 text-[#55524d]">Envie uma referência, fotografia, desenho ou ficheiro 3D. A equipa POPForge analisa materiais, dimensões, custo e prazo antes de criar a proposta.</p><div className="mt-8 grid gap-4 sm:grid-cols-3">{["Envie a ideia", "Receba proposta", "Acompanhe a produção"].map((label, index) => <div key={label} className="border-t border-[#d9d5cc] pt-3"><span className="text-xs text-[#e6532f]">0{index + 1}</span><p className="mt-2 text-sm font-bold">{label}</p></div>)}</div><Link href="/personalizados" className="mt-9 inline-flex w-fit items-center gap-2 border-b-2 border-[#171716] pb-2 text-sm font-bold">Iniciar pedido personalizado <ArrowRight className="size-4" /></Link></div></section><section className="border-y border-[#e7e5df] bg-white"><div className="mx-auto grid max-w-[1440px] gap-6 px-5 py-8 text-sm sm:grid-cols-3 sm:px-10 lg:px-16"><p className="flex gap-3"><PackageCheck className="size-5 shrink-0 text-[#e6532f]" /><span><b className="block">Produção acompanhada</b><span className="text-[#6d6a64]">Cada pedido evolui no CRM POPForge.</span></span></p><p className="flex gap-3"><Heart className="size-5 shrink-0 text-[#e6532f]" /><span><b className="block">Peças com intenção</b><span className="text-[#6d6a64]">Utilidade, cuidado e personalização.</span></span></p><p className="flex gap-3"><ShoppingBag className="size-5 shrink-0 text-[#e6532f]" /><span><b className="block">Compra simples</b><span className="text-[#6d6a64]">Encomende e acompanhe na sua conta.</span></span></p></div></section></main><footer className="bg-[#171716] text-white"><div className="mx-auto grid max-w-[1440px] gap-8 px-5 py-12 sm:grid-cols-3 sm:px-10 lg:px-16"><div><b className="text-xl tracking-[-.08em]"><i className="not-italic text-[#f16a49]">POP</i>Forge</b><p className="mt-3 max-w-xs text-sm leading-6 text-[#a7a39d]">Objetos e produção 3D para pessoas, espaços e marcas.</p></div><div className="grid grid-cols-2 gap-5 text-sm text-[#d3d0ca]"><Link href="/produtos">Loja</Link><Link href="/personalizados">Personalizados</Link><Link href="/empresas">Empresas</Link><Link href="/faq">FAQ</Link></div><div className="text-sm text-[#a7a39d]"><p className="font-bold text-white">Já comprou?</p><Link className="mt-2 inline-block underline underline-offset-4" href="/minha-conta">Acompanhe a sua encomenda</Link></div></div></footer>{cartOpen && <CartDrawer cart={cart} total={total} onClose={() => setCartOpen(false)} onUpdate={update} />}</div>;
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("all");
+  const [cart, setCart] = useState<CartLine[]>([]);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const featured = catalog.products
+    .filter((product) => product.featured)
+    .slice(0, 4);
+  const hero = featured[0] || catalog.products[0];
+  const visible = useMemo(
+    () =>
+      catalog.products.filter(
+        (product) =>
+          `${product.name} ${product.description || ""} ${product.category?.name || ""}`
+            .toLowerCase()
+            .includes(query.toLowerCase()) &&
+          (category === "all" || product.category?.slug === category),
+      ),
+    [catalog.products, category, query],
+  );
+  const add = (product: StorefrontProduct, variant = product.variants[0]) => {
+    if (!variant) return;
+    setCart((items) => {
+      const line = items.find((item) => item.variant.id === variant.id);
+      return line
+        ? items.map((item) =>
+            item.variant.id === variant.id
+              ? { ...item, quantity: item.quantity + 1 }
+              : item,
+          )
+        : [...items, { product, variant, quantity: 1 }];
+    });
+    setCartOpen(true);
+  };
+  const update = (id: string, quantity: number) =>
+    setCart((items) =>
+      quantity < 1
+        ? items.filter((item) => item.variant.id !== id)
+        : items.map((item) =>
+            item.variant.id === id ? { ...item, quantity } : item,
+          ),
+    );
+  const total = cart.reduce(
+    (sum, item) => sum + item.variant.price * item.quantity,
+    0,
+  );
+  const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+  return (
+    <div className="min-h-screen bg-[#fcfcfa] text-[#161615]">
+      <div className="bg-[#171716] px-4 py-2 text-center text-[11px] font-medium tracking-wide text-white">
+        PRODUÇÃO 3D FEITA EM PORTUGAL · PEÇAS PRONTAS E PROJETOS À MEDIDA
+      </div>
+      <header className="sticky top-0 z-40 border-b border-[#e7e5df] bg-[#fcfcfa]/95 backdrop-blur">
+        <div className="mx-auto flex h-[76px] max-w-[1440px] items-center justify-between px-5 lg:px-10">
+          <Link href="/" className="leading-none">
+            <span className="block text-2xl font-black tracking-[-.09em]">
+              <i className="not-italic text-[#e6532f]">POP</i>Forge
+            </span>
+            <span className="mt-1 block text-[8px] font-bold tracking-[.24em] text-[#787670] uppercase">
+              Custom 3D Creations
+            </span>
+          </Link>
+          <nav className="hidden h-full items-center gap-8 text-sm font-semibold lg:flex">
+            <Link href="/produtos" className="hover:text-[#e6532f]">
+              Loja
+            </Link>
+            <Link href="/personalizados" className="hover:text-[#e6532f]">
+              Personalizados
+            </Link>
+            <Link href="/empresas" className="hover:text-[#e6532f]">
+              Para empresas
+            </Link>
+            <Link href="/faq" className="hover:text-[#e6532f]">
+              Como funciona
+            </Link>
+          </nav>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setMenuOpen((open) => !open)}
+              className="p-2 lg:hidden"
+              aria-label="Abrir menu"
+            >
+              <Menu className="size-5" />
+            </button>
+            <Link
+              href="/favoritos"
+              className="hidden p-2 sm:block"
+              aria-label="Favoritos"
+            >
+              <Heart className="size-5" />
+            </Link>
+            <Link
+              href="/minha-conta"
+              className="hidden px-3 text-sm font-semibold sm:block"
+            >
+              Conta
+            </Link>
+            <button
+              onClick={() => setCartOpen(true)}
+              className="relative ml-1 flex items-center gap-2 rounded-full bg-[#171716] px-4 py-2.5 text-sm font-bold text-white"
+            >
+              <ShoppingBag className="size-4" /> Carrinho
+              {count > 0 && (
+                <span className="grid size-5 place-items-center rounded-full bg-[#e6532f] text-[10px]">
+                  {count}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+        {menuOpen && (
+          <nav className="border-t border-[#e7e5df] bg-white px-5 py-4 lg:hidden">
+            <div className="grid gap-3 text-sm font-semibold">
+              <Link onClick={() => setMenuOpen(false)} href="/produtos">
+                Loja
+              </Link>
+              <Link onClick={() => setMenuOpen(false)} href="/personalizados">
+                Personalizados
+              </Link>
+              <Link onClick={() => setMenuOpen(false)} href="/empresas">
+                Para empresas
+              </Link>
+              <Link onClick={() => setMenuOpen(false)} href="/minha-conta">
+                A minha conta
+              </Link>
+            </div>
+          </nav>
+        )}
+      </header>
+      <main>
+        <section className="border-b border-[#e7e5df]">
+          <div className="mx-auto grid max-w-[1440px] lg:grid-cols-[1.05fr_.95fr]">
+            <div className="flex min-h-[480px] flex-col justify-center px-5 py-16 sm:px-10 lg:px-16">
+              <p className="text-xs font-bold tracking-[.18em] text-[#e6532f] uppercase">
+                Design, utilidade e personalidade
+              </p>
+              <h1 className="mt-5 max-w-2xl text-5xl font-black leading-[.94] tracking-[-.065em] sm:text-7xl">
+                Objetos que tornam o seu espaço{" "}
+                <i className="font-serif font-normal">único.</i>
+              </h1>
+              <p className="mt-7 max-w-xl text-base leading-7 text-[#64625d] sm:text-lg">
+                Peças 3D para organizar, oferecer e personalizar. Explore o
+                catálogo ou envie-nos uma ideia para produzir à medida.
+              </p>
+              <div className="mt-9 flex flex-wrap gap-3">
+                <Link
+                  href="/produtos"
+                  className="inline-flex items-center gap-2 rounded-full bg-[#e6532f] px-6 py-3.5 text-sm font-bold text-white hover:bg-[#ca4222]"
+                >
+                  Comprar produtos <ArrowRight className="size-4" />
+                </Link>
+                <Link
+                  href="/personalizados"
+                  className="rounded-full border border-[#cfcac0] px-6 py-3.5 text-sm font-bold hover:border-[#171716]"
+                >
+                  Criar uma peça
+                </Link>
+              </div>
+              <div className="mt-12 grid max-w-xl grid-cols-3 gap-4 border-t border-[#dedbd4] pt-6 text-xs">
+                <span>
+                  <b className="block text-base">3D</b>
+                  <span className="text-[#6d6a64]">Produção local</span>
+                </span>
+                <span>
+                  <b className="block text-base">100%</b>
+                  <span className="text-[#6d6a64]">Acompanhamento</span>
+                </span>
+                <span>
+                  <b className="block text-base">1:1</b>
+                  <span className="text-[#6d6a64]">Projetos à medida</span>
+                </span>
+              </div>
+            </div>
+            <div className="relative min-h-[390px] overflow-hidden bg-[#e8e5dc] lg:min-h-0">
+              {hero?.imageUrl ? (
+                <img
+                  src={hero.imageUrl}
+                  alt={hero.name}
+                  className="absolute inset-0 size-full object-cover"
+                />
+              ) : (
+                <div className="grid size-full place-items-center text-8xl">
+                  PF
+                </div>
+              )}
+              <div className="absolute inset-x-5 bottom-5 flex items-center justify-between bg-white/95 p-4 backdrop-blur sm:inset-x-8 sm:bottom-8">
+                <div>
+                  <p className="text-[10px] font-bold tracking-[.15em] text-[#e6532f] uppercase">
+                    Seleção da semana
+                  </p>
+                  <Link
+                    href={hero ? `/produto/${hero.slug}` : "/produtos"}
+                    className="mt-1 block font-bold hover:underline"
+                  >
+                    {hero?.name || "Explorar POPForge"}
+                  </Link>
+                </div>
+                {hero && <b>{money(priceOf(hero))}</b>}
+              </div>
+            </div>
+          </div>
+        </section>
+        <section className="mx-auto max-w-[1440px] px-5 py-14 sm:px-10 lg:px-16">
+          <div className="flex items-end justify-between">
+            <div>
+              <p className="text-xs font-bold tracking-[.18em] text-[#e6532f] uppercase">
+                Comprar por coleção
+              </p>
+              <h2 className="mt-2 text-3xl font-black tracking-[-.05em]">
+                Encontre o que procura.
+              </h2>
+            </div>
+            <Link
+              href="/produtos"
+              className="hidden text-sm font-bold underline underline-offset-4 sm:block"
+            >
+              Ver todas as coleções
+            </Link>
+          </div>
+          <div className="mt-7 grid grid-cols-2 gap-3 md:grid-cols-4">
+            {catalog.categories.slice(0, 4).map((item) => (
+              <button
+                type="button"
+                key={item.slug}
+                onClick={() => {
+                  setCategory(item.slug);
+                  document
+                    .getElementById("catalogo")
+                    ?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className="group relative aspect-[1.12/1] overflow-hidden bg-[#e8e5dc] text-left"
+              >
+                <img
+                  src={item.imageUrl || "/lovable/product-9-R9fAMCkk.jpg"}
+                  alt=""
+                  className="size-full object-cover transition duration-500 group-hover:scale-105"
+                />
+                <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 px-4 py-4 text-sm font-bold text-white">
+                  {item.name}
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+        {featured.length > 0 && (
+          <section className="border-b border-[#e7e5df] bg-white">
+            <div className="mx-auto max-w-[1440px] px-5 py-14 sm:px-10 lg:px-16">
+              <div className="flex items-end justify-between gap-5">
+                <div>
+                  <p className="text-xs font-bold tracking-[.18em] text-[#e6532f] uppercase">
+                    Em destaque
+                  </p>
+                  <h2 className="mt-2 text-3xl font-black tracking-[-.05em]">
+                    Escolhas POPForge
+                  </h2>
+                </div>
+                <Link href="/produtos" className="text-sm font-bold underline underline-offset-4">
+                  Ver catálogo
+                </Link>
+              </div>
+              <div className="mt-8 grid gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
+                {featured.map((product) => (
+                  <ProductCard key={product.id} product={product} onAdd={add} />
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+        <section
+          id="catalogo"
+          className="border-y border-[#e7e5df] bg-[#f4f2ed]"
+        >
+          <div className="mx-auto max-w-[1440px] px-5 py-16 sm:px-10 lg:px-16">
+            <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
+              <div>
+                <p className="text-xs font-bold tracking-[.18em] text-[#e6532f] uppercase">
+                  Catálogo
+                </p>
+                <h2 className="mt-2 text-4xl font-black tracking-[-.055em]">
+                  Peças POPForge
+                </h2>
+              </div>
+              <label className="relative block w-full lg:max-w-sm">
+                <Search className="absolute top-1/2 left-4 size-4 -translate-y-1/2 text-[#77736b]" />
+                <input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Pesquisar no catálogo"
+                  className="h-12 w-full rounded-none border border-[#d9d5cc] bg-white pl-11 pr-4 text-sm outline-none focus:border-[#171716]"
+                />
+              </label>
+            </div>
+            <div className="mt-7 flex items-center gap-2 overflow-x-auto pb-1">
+              <button
+                onClick={() => setCategory("all")}
+                className={`whitespace-nowrap border px-4 py-2 text-sm font-semibold ${category === "all" ? "border-[#171716] bg-[#171716] text-white" : "border-[#d6d1c7] bg-white"}`}
+              >
+                Tudo
+              </button>
+              {catalog.categories.map((item) => (
+                <button
+                  key={item.slug}
+                  onClick={() => setCategory(item.slug)}
+                  className={`whitespace-nowrap border px-4 py-2 text-sm font-semibold ${category === item.slug ? "border-[#171716] bg-[#171716] text-white" : "border-[#d6d1c7] bg-white"}`}
+                >
+                  {item.name}
+                </button>
+              ))}
+            </div>
+            <div className="mt-9 grid gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {visible.map((product) => (
+                <ProductCard key={product.id} product={product} onAdd={add} />
+              ))}
+            </div>
+            {visible.length === 0 && (
+              <p className="py-16 text-center text-sm text-[#6d6a64]">
+                Não encontrámos produtos com estes filtros.
+              </p>
+            )}
+          </div>
+        </section>
+        <section className="mx-auto grid max-w-[1440px] gap-10 px-5 py-16 sm:px-10 lg:grid-cols-[.85fr_1.15fr] lg:px-16 lg:py-24">
+          <div className="bg-[#e6532f] p-8 text-white sm:p-12">
+            <Sparkles className="size-7" />
+            <p className="mt-16 text-xs font-bold tracking-[.18em] uppercase">
+              Feito para si
+            </p>
+            <h2 className="mt-3 max-w-sm text-4xl font-black leading-none tracking-[-.05em]">
+              A sua ideia não tem de caber num catálogo.
+            </h2>
+          </div>
+          <div className="flex flex-col justify-center">
+            <p className="text-lg leading-8 text-[#55524d]">
+              Envie uma referência, fotografia, desenho ou ficheiro 3D. A equipa
+              POPForge analisa materiais, dimensões, custo e prazo antes de
+              criar a proposta.
+            </p>
+            <div className="mt-8 grid gap-4 sm:grid-cols-3">
+              {["Envie a ideia", "Receba proposta", "Acompanhe a produção"].map(
+                (label, index) => (
+                  <div key={label} className="border-t border-[#d9d5cc] pt-3">
+                    <span className="text-xs text-[#e6532f]">0{index + 1}</span>
+                    <p className="mt-2 text-sm font-bold">{label}</p>
+                  </div>
+                ),
+              )}
+            </div>
+            <Link
+              href="/personalizados"
+              className="mt-9 inline-flex w-fit items-center gap-2 border-b-2 border-[#171716] pb-2 text-sm font-bold"
+            >
+              Iniciar pedido personalizado <ArrowRight className="size-4" />
+            </Link>
+          </div>
+        </section>
+        <section className="border-y border-[#e7e5df] bg-white">
+          <div className="mx-auto grid max-w-[1440px] gap-6 px-5 py-8 text-sm sm:grid-cols-3 sm:px-10 lg:px-16">
+            <p className="flex gap-3">
+              <PackageCheck className="size-5 shrink-0 text-[#e6532f]" />
+              <span>
+                <b className="block">Produção acompanhada</b>
+                <span className="text-[#6d6a64]">
+                  Cada pedido evolui no CRM POPForge.
+                </span>
+              </span>
+            </p>
+            <p className="flex gap-3">
+              <Heart className="size-5 shrink-0 text-[#e6532f]" />
+              <span>
+                <b className="block">Peças com intenção</b>
+                <span className="text-[#6d6a64]">
+                  Utilidade, cuidado e personalização.
+                </span>
+              </span>
+            </p>
+            <p className="flex gap-3">
+              <ShoppingBag className="size-5 shrink-0 text-[#e6532f]" />
+              <span>
+                <b className="block">Compra simples</b>
+                <span className="text-[#6d6a64]">
+                  Encomende e acompanhe na sua conta.
+                </span>
+              </span>
+            </p>
+          </div>
+        </section>
+      </main>
+      <footer className="bg-[#171716] text-white">
+        <div className="mx-auto grid max-w-[1440px] gap-8 px-5 py-12 sm:grid-cols-3 sm:px-10 lg:px-16">
+          <div>
+            <b className="text-xl tracking-[-.08em]">
+              <i className="not-italic text-[#f16a49]">POP</i>Forge
+            </b>
+            <p className="mt-3 max-w-xs text-sm leading-6 text-[#a7a39d]">
+              Objetos e produção 3D para pessoas, espaços e marcas.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-5 text-sm text-[#d3d0ca]">
+            <Link href="/produtos">Loja</Link>
+            <Link href="/personalizados">Personalizados</Link>
+            <Link href="/empresas">Empresas</Link>
+            <Link href="/faq">FAQ</Link>
+          </div>
+          <div className="text-sm text-[#a7a39d]">
+            <p className="font-bold text-white">Já comprou?</p>
+            <Link
+              className="mt-2 inline-block underline underline-offset-4"
+              href="/minha-conta"
+            >
+              Acompanhe a sua encomenda
+            </Link>
+          </div>
+        </div>
+      </footer>
+      {cartOpen && (
+        <CartDrawer
+          cart={cart}
+          total={total}
+          onClose={() => setCartOpen(false)}
+          onUpdate={update}
+        />
+      )}
+    </div>
+  );
 }
 
-export function ProductCard({ product, onAdd }: { product: StorefrontProduct; onAdd?: (product: StorefrontProduct, variant?: StorefrontVariant) => void }) { const variant = product.variants[0]; return <article className="group"><Link href={`/produto/${product.slug}`} className="relative block aspect-[.88/1] overflow-hidden bg-[#e8e5dc]">{product.imageUrl ? <img src={product.imageUrl} alt={product.name} className="size-full object-cover transition duration-500 group-hover:scale-105" /> : <span className="grid size-full place-items-center text-3xl font-black text-[#8b877f]">PF</span>}{product.badge && <span className="absolute left-3 top-3 bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide">{product.badge}</span>}</Link><div className="pt-4"><p className="text-xs text-[#77736b]">{product.category?.name || "POPForge"}</p><div className="mt-1 flex items-start justify-between gap-3"><Link href={`/produto/${product.slug}`} className="font-bold leading-5 hover:underline">{product.name}</Link><b className="whitespace-nowrap text-sm">{product.productType !== "ready_made" && <small className="mr-1 font-normal text-[#77736b]">desde</small>}{money(priceOf(product))}</b></div><div className="mt-3 flex items-center justify-between"><span className="text-xs text-[#77736b]">{product.variants[0]?.material || "Produção 3D"}</span>{onAdd && variant && <button onClick={() => onAdd(product, variant)} className="inline-flex items-center gap-1 text-xs font-bold underline underline-offset-4 hover:text-[#e6532f]"><Plus className="size-3" /> Adicionar</button>}</div></div></article>; }
+export function ProductCard({
+  product,
+  onAdd,
+}: {
+  product: StorefrontProduct;
+  onAdd?: (product: StorefrontProduct, variant?: StorefrontVariant) => void;
+}) {
+  const variant = product.variants[0];
+  return (
+    <article className="group">
+      <Link
+        href={`/produto/${product.slug}`}
+        className="relative block aspect-[.88/1] overflow-hidden bg-[#e8e5dc]"
+      >
+        {product.imageUrl ? (
+          <img
+            src={product.imageUrl}
+            alt={product.name}
+            className="size-full object-cover transition duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <span className="grid size-full place-items-center text-3xl font-black text-[#8b877f]">
+            PF
+          </span>
+        )}
+        {product.badge && (
+          <span className="absolute left-3 top-3 bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide">
+            {product.badge}
+          </span>
+        )}
+      </Link>
+      <div className="pt-4">
+        <p className="text-xs text-[#77736b]">
+          {product.category?.name || "POPForge"}
+        </p>
+        <div className="mt-1 flex items-start justify-between gap-3">
+          <Link
+            href={`/produto/${product.slug}`}
+            className="font-bold leading-5 hover:underline"
+          >
+            {product.name}
+          </Link>
+          <b className="whitespace-nowrap text-sm">
+            {product.productType !== "ready_made" && (
+              <small className="mr-1 font-normal text-[#77736b]">desde</small>
+            )}
+            {money(priceOf(product))}
+          </b>
+        </div>
+        <div className="mt-3 flex items-center justify-between">
+          <span className="text-xs text-[#77736b]">
+            {product.variants[0]?.material || "Produção 3D"}
+          </span>
+          {onAdd && variant && (
+            <button
+              onClick={() => onAdd(product, variant)}
+              className="inline-flex items-center gap-1 text-xs font-bold underline underline-offset-4 hover:text-[#e6532f]"
+            >
+              <Plus className="size-3" /> Adicionar
+            </button>
+          )}
+        </div>
+      </div>
+    </article>
+  );
+}
 
-function CartDrawer({ cart, total, onClose, onUpdate }: { cart: CartLine[]; total: number; onClose: () => void; onUpdate: (id: string, quantity: number) => void }) { return <div className="fixed inset-0 z-50 bg-black/35"><aside className="ml-auto flex h-full w-full max-w-md flex-col bg-white p-6 text-[#171716] shadow-2xl"><div className="flex items-center justify-between border-b border-[#e7e5df] pb-5"><div><p className="text-xs font-bold tracking-[.16em] text-[#e6532f] uppercase">O seu pedido</p><h2 className="mt-1 text-2xl font-black">Carrinho</h2></div><button onClick={onClose} className="p-2" aria-label="Fechar"><X /></button></div>{cart.length === 0 ? <div className="grid flex-1 place-items-center text-center"><div><ShoppingBag className="mx-auto size-10 text-[#e6532f]" /><p className="mt-4 font-semibold">O seu carrinho está vazio.</p><button onClick={onClose} className="mt-3 text-sm font-bold underline">Continuar a explorar</button></div></div> : <><div className="flex-1 space-y-5 overflow-y-auto py-6">{cart.map((line) => <div className="flex gap-4" key={line.variant.id}><div className="size-20 shrink-0 bg-[#ece9e2]">{line.product.imageUrl && <img src={line.product.imageUrl} alt="" className="size-full object-cover" />}</div><div className="min-w-0 flex-1"><b className="block text-sm">{line.product.name}</b><p className="mt-1 text-xs text-[#77736b]">{line.variant.name}</p><p className="mt-2 text-sm font-bold">{money(line.variant.price)}</p><div className="mt-3 inline-flex items-center border border-[#d9d5cc]"><button onClick={() => onUpdate(line.variant.id, line.quantity - 1)} className="p-2"><Minus className="size-3" /></button><span className="w-7 text-center text-sm">{line.quantity}</span><button onClick={() => onUpdate(line.variant.id, line.quantity + 1)} className="p-2"><Plus className="size-3" /></button></div></div></div>)}</div><div className="border-t border-[#e7e5df] pt-5"><div className="flex justify-between text-lg font-black"><span>Total</span><span>{money(total)}</span></div><p className="mt-2 text-xs leading-5 text-[#77736b]">O pagamento é confirmado após análise da encomenda.</p><Link href={`/checkout?cart=${encodeURIComponent(JSON.stringify(cart.map((line) => ({ variantId: line.variant.id, quantity: line.quantity }))))}`} onClick={onClose} className="mt-5 block bg-[#e6532f] px-5 py-3.5 text-center text-sm font-bold text-white hover:bg-[#ca4222]">Continuar para checkout</Link></div></>}</aside></div> }
+function CartDrawer({
+  cart,
+  total,
+  onClose,
+  onUpdate,
+}: {
+  cart: CartLine[];
+  total: number;
+  onClose: () => void;
+  onUpdate: (id: string, quantity: number) => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 bg-black/35">
+      <aside className="ml-auto flex h-full w-full max-w-md flex-col bg-white p-6 text-[#171716] shadow-2xl">
+        <div className="flex items-center justify-between border-b border-[#e7e5df] pb-5">
+          <div>
+            <p className="text-xs font-bold tracking-[.16em] text-[#e6532f] uppercase">
+              O seu pedido
+            </p>
+            <h2 className="mt-1 text-2xl font-black">Carrinho</h2>
+          </div>
+          <button onClick={onClose} className="p-2" aria-label="Fechar">
+            <X />
+          </button>
+        </div>
+        {cart.length === 0 ? (
+          <div className="grid flex-1 place-items-center text-center">
+            <div>
+              <ShoppingBag className="mx-auto size-10 text-[#e6532f]" />
+              <p className="mt-4 font-semibold">O seu carrinho está vazio.</p>
+              <button
+                onClick={onClose}
+                className="mt-3 text-sm font-bold underline"
+              >
+                Continuar a explorar
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="flex-1 space-y-5 overflow-y-auto py-6">
+              {cart.map((line) => (
+                <div className="flex gap-4" key={line.variant.id}>
+                  <div className="size-20 shrink-0 bg-[#ece9e2]">
+                    {line.product.imageUrl && (
+                      <img
+                        src={line.product.imageUrl}
+                        alt=""
+                        className="size-full object-cover"
+                      />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <b className="block text-sm">{line.product.name}</b>
+                    <p className="mt-1 text-xs text-[#77736b]">
+                      {line.variant.name}
+                    </p>
+                    <p className="mt-2 text-sm font-bold">
+                      {money(line.variant.price)}
+                    </p>
+                    <div className="mt-3 inline-flex items-center border border-[#d9d5cc]">
+                      <button
+                        onClick={() =>
+                          onUpdate(line.variant.id, line.quantity - 1)
+                        }
+                        className="p-2"
+                      >
+                        <Minus className="size-3" />
+                      </button>
+                      <span className="w-7 text-center text-sm">
+                        {line.quantity}
+                      </span>
+                      <button
+                        onClick={() =>
+                          onUpdate(line.variant.id, line.quantity + 1)
+                        }
+                        className="p-2"
+                      >
+                        <Plus className="size-3" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="border-t border-[#e7e5df] pt-5">
+              <div className="flex justify-between text-lg font-black">
+                <span>Total</span>
+                <span>{money(total)}</span>
+              </div>
+              <p className="mt-2 text-xs leading-5 text-[#77736b]">
+                O pagamento é confirmado após análise da encomenda.
+              </p>
+              <Link
+                href={`/checkout?cart=${encodeURIComponent(JSON.stringify(cart.map((line) => ({ variantId: line.variant.id, quantity: line.quantity }))))}`}
+                onClick={onClose}
+                className="mt-5 block bg-[#e6532f] px-5 py-3.5 text-center text-sm font-bold text-white hover:bg-[#ca4222]"
+              >
+                Continuar para checkout
+              </Link>
+            </div>
+          </>
+        )}
+      </aside>
+    </div>
+  );
+}
