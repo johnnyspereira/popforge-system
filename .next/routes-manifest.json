@@ -1166,6 +1166,12 @@
       "namedRegex": "^/api/storefront/account/orders(?:/)?$"
     },
     {
+      "page": "/api/storefront/account/profile",
+      "regex": "^/api/storefront/account/profile(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/storefront/account/profile(?:/)?$"
+    },
+    {
       "page": "/api/storefront/account/session",
       "regex": "^/api/storefront/account/session(?:/)?$",
       "routeKeys": {},
