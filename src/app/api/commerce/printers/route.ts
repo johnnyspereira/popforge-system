@@ -26,6 +26,20 @@ export async function POST(request: Request) {
   if (!name) return Response.json({ error: 'Indique o nome da impressora.' }, { status: 400 });
   const connectionMode = body?.connectionMode === 'local_worker' ? 'local_worker' : 'manual';
   const workerKey = connectionMode === 'local_worker' ? randomBytes(32).toString('base64url') : null;
-  await mutate(`INSERT INTO commerce_printers(id,account_id,name,model,nozzle_diameter,local_address,connection_mode,worker_key_hash,status,notes) VALUES(?,?,?,?,?,?,?,?,?,?)`, [randomUUID(), auth.account.id, name, clean(body?.model, 160) || null, Number(body?.nozzleDiameter) || null, localAddress || null, connectionMode, workerKey ? hash(workerKey) : null, 'offline', clean(body?.notes, 2000) || null]);
-  return Response.json({ success: true, workerKey });
+  const id = randomUUID();
+  await mutate(`INSERT INTO commerce_printers(id,account_id,name,model,nozzle_diameter,local_address,connection_mode,worker_key_hash,status,notes) VALUES(?,?,?,?,?,?,?,?,?,?)`, [id, auth.account.id, name, clean(body?.model, 160) || null, Number(body?.nozzleDiameter) || null, localAddress || null, connectionMode, workerKey ? hash(workerKey) : null, 'offline', clean(body?.notes, 2000) || null]);
+  return Response.json({ success: true, id, workerKey });
+}
+
+export async function PATCH(request: Request) {
+  const auth = await authContext();
+  if (!auth) return Response.json({ error: 'Sessão inválida.' }, { status: 401 });
+  if (!hasMinRole(auth.profile.account_role, 'agent')) return Response.json({ error: 'Sem permissão para gerir impressoras.' }, { status: 403 });
+  const body = await request.json().catch(() => null) as Record<string, unknown> | null;
+  const id = clean(body?.id, 36);
+  if (!id || body?.action !== 'rotate_worker_key') return Response.json({ error: 'Pedido inválido.' }, { status: 400 });
+  const workerKey = randomBytes(32).toString('base64url');
+  const result = await mutate('UPDATE commerce_printers SET worker_key_hash=?, connection_mode=\'local_worker\' WHERE id=? AND account_id=?', [hash(workerKey), id, auth.account.id]);
+  if (!result.affectedRows) return Response.json({ error: 'Impressora não encontrada.' }, { status: 404 });
+  return Response.json({ success: true, id, workerKey });
 }
