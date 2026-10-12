@@ -623,7 +623,7 @@ export function ProductCatalog() {
               >
                 Cancelar
               </Button>
-              <Button disabled={saving || uploading} className="min-w-36">
+              <Button nativeButton={false} type="submit" disabled={saving || uploading} className="min-w-36">
                 {saving
                   ? "A guardar…"
                   : form.id
