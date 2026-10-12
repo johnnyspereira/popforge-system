@@ -920,6 +920,18 @@
       "namedRegex": "^/api/commerce/orders(?:/)?$"
     },
     {
+      "page": "/api/commerce/printers",
+      "regex": "^/api/commerce/printers(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/commerce/printers(?:/)?$"
+    },
+    {
+      "page": "/api/commerce/printers/telemetry",
+      "regex": "^/api/commerce/printers/telemetry(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/commerce/printers/telemetry(?:/)?$"
+    },
+    {
       "page": "/api/commerce/products",
       "regex": "^/api/commerce/products(?:/)?$",
       "routeKeys": {},
@@ -1446,6 +1458,12 @@
       "regex": "^/commerce/encomendas(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/commerce/encomendas(?:/)?$"
+    },
+    {
+      "page": "/commerce/impressoras",
+      "regex": "^/commerce/impressoras(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/commerce/impressoras(?:/)?$"
     },
     {
       "page": "/commerce/inventario",
