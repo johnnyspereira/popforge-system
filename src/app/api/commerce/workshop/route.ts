@@ -15,7 +15,7 @@ export async function GET() {
   const auth = await authContext();
   if (!auth) return Response.json({ error: "Sessão inválida." }, { status: 401 });
   const id = auth.account.id;
-  const [inventory, jobs, orders, report] = await Promise.all([
+  const [inventory, jobs, orders, report, printers] = await Promise.all([
     selectRows<RowDataPacket[]>("SELECT id,sku,item_type,name,material,color,unit,purchase_total,purchased_quantity,remaining_quantity,low_stock_threshold,active FROM commerce_inventory_items WHERE account_id=? AND active=TRUE ORDER BY item_type,name", [id]),
     selectRows<RowDataPacket[]>(`SELECT j.id,j.title,j.status,j.priority,j.due_date,j.printer_name,j.estimated_grams,j.actual_grams,j.estimated_minutes,j.actual_minutes,j.actual_labor_minutes,j.actual_energy_cost,j.actual_other_cost,j.internal_notes,j.created_at,o.order_number,i.product_name
       FROM commerce_production_jobs j LEFT JOIN commerce_orders o ON o.id=j.order_id LEFT JOIN commerce_order_items i ON i.id=j.order_item_id
@@ -28,8 +28,9 @@ export async function GET() {
       (SELECT COALESCE(SUM(COALESCE(actual_energy_cost,0)+COALESCE(actual_other_cost,0)),0) FROM commerce_production_jobs WHERE account_id=?) AS actual_other_cost,
       (SELECT COUNT(*) FROM commerce_production_jobs WHERE account_id=? AND status='completed') AS jobs_completed,
       (SELECT COUNT(*) FROM commerce_inventory_items WHERE account_id=? AND active=TRUE AND remaining_quantity<=low_stock_threshold) AS low_stock`, [id, id, id, id, id, id]),
+    selectRows<RowDataPacket[]>("SELECT id,name,model,status FROM commerce_printers WHERE account_id=? ORDER BY status='idle' DESC,created_at ASC", [id]),
   ]);
-  return Response.json({ inventory, jobs, orders, report: report[0] || {} });
+  return Response.json({ inventory, jobs, orders, report: report[0] || {}, printers });
 }
 
 export async function POST(request: Request) {
