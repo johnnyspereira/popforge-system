@@ -44,7 +44,7 @@ export function CommerceManager({ kind }: { kind: Kind }) {
         const slug = `${name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${Date.now().toString(36)}`;
         const product = await db.from('commerce_products').insert({ id, name, slug, description: String(form.get('description') || ''), status: 'active', product_type: 'ready_made', customizable: false, featured: false });
         if (product.error) throw new Error(product.error.message);
-        const variant = await db.from('commerce_product_variants').insert({ id: crypto.randomUUID(), product_id: id, sku: String(form.get('sku')).trim(), name: 'Padrão', price: Number(form.get('price')), stock_quantity: Number(form.get('stock')), track_stock: true, active: true });
+        const variant = await db.from('commerce_product_variants').insert({ id: crypto.randomUUID(), product_id: id, sku: String(form.get('sku')).trim(), name: 'Padrão', price: Number(form.get('price')), stock_quantity: Number(form.get('stock')), production_minutes: Number(form.get('productionMinutes')) || null, production_grams: Number(form.get('productionGrams')) || null, production_material_sku: String(form.get('productionMaterialSku') || '').trim().toUpperCase() || null, production_printer_name: String(form.get('productionPrinterName') || '').trim() || null, track_stock: true, active: true });
         if (variant.error) throw new Error(variant.error.message);
       }
       if (kind === 'inventory') {
