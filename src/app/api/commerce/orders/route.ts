@@ -24,7 +24,7 @@ export async function GET(request: Request) {
   const id = new URL(request.url).searchParams.get("id");
   if (id) {
     const orders = await selectRows<(OrderRow & { notes: string | null; shipping_address: string | null; tracking_code: string | null })[]>(
-      "SELECT id,order_number,status,payment_status,stock_state,customer_review_required,contact_id,channel,total,customer_name,customer_email,customer_phone,created_at,notes,shipping_address,tracking_code,0 AS items FROM commerce_orders WHERE id=? AND account_id=? LIMIT 1", [id, auth.account.id],
+      "SELECT id,order_number,status,payment_status,payment_method,delivery_method,delivery_status,estimated_dispatch_at,stock_state,customer_review_required,contact_id,channel,total,customer_name,customer_email,customer_phone,created_at,notes,shipping_address,tracking_code,0 AS items FROM commerce_orders WHERE id=? AND account_id=? LIMIT 1", [id, auth.account.id],
     );
     const order = orders[0];
     if (!order) return Response.json({ error: "Encomenda não encontrada." }, { status: 404 });
@@ -47,11 +47,13 @@ export async function PATCH(request: Request) {
   const auth = await authContext();
   if (!auth) return Response.json({ error: "Sessão inválida." }, { status: 401 });
   if (!hasMinRole(auth.profile.account_role, "agent")) return Response.json({ error: "Sem permissão para gerir encomendas." }, { status: 403 });
-  const body = await request.json().catch(() => null) as { id?: string; status?: string; paymentStatus?: string; notes?: string } | null;
+  const body = await request.json().catch(() => null) as { id?: string; status?: string; paymentStatus?: string; notes?: string; trackingCode?: string; deliveryStatus?: string; estimatedDispatchAt?: string } | null;
   if (!body?.id) return Response.json({ error: "Encomenda inválida." }, { status: 400 });
   if (body.status !== undefined && !isOrderStatus(body.status)) return Response.json({ error: "Estado de encomenda inválido." }, { status: 400 });
   if (body.paymentStatus !== undefined && !isPaymentStatus(body.paymentStatus)) return Response.json({ error: "Estado de pagamento inválido." }, { status: 400 });
-  if (body.status === undefined && body.paymentStatus === undefined) return Response.json({ error: "Indique o novo estado." }, { status: 400 });
+  const deliveryStatuses = new Set(["pending", "preparing", "shipped", "delivered", "issue"]);
+  if (body.deliveryStatus !== undefined && !deliveryStatuses.has(body.deliveryStatus)) return Response.json({ error: "Estado de entrega inválido." }, { status: 400 });
+  if (body.status === undefined && body.paymentStatus === undefined && body.trackingCode === undefined && body.deliveryStatus === undefined && body.estimatedDispatchAt === undefined) return Response.json({ error: "Indique a alteração a guardar." }, { status: 400 });
   // Recording money as received is a financial act: restricted to admins.
   if (body.paymentStatus !== undefined && !hasMinRole(auth.profile.account_role, "admin")) return Response.json({ error: "Apenas administradores podem alterar o estado do pagamento." }, { status: 403 });
   const orderId = body.id;
@@ -80,7 +82,14 @@ export async function PATCH(request: Request) {
         await connection.execute<ResultSetHeader>("UPDATE commerce_orders SET payment_status=?,paid_at=CASE WHEN ?='paid' AND paid_at IS NULL THEN UTC_TIMESTAMP(3) ELSE paid_at END WHERE id=?", [nextPayment, nextPayment, orderId]);
         await connection.execute("INSERT INTO commerce_order_history(id,account_id,order_id,actor_user_id,event_type,previous_value,new_value,notes) VALUES(?,?,?,?,?,?,?,?)", [randomUUID(), auth.account.id, orderId, auth.user.id, "payment_changed", current.payment_status, nextPayment, notes]);
       }
-      if (!nextStatus && !nextPayment) throw new Error("UNCHANGED");
+      const trackingCode = body.trackingCode === undefined ? undefined : String(body.trackingCode).trim().slice(0, 160) || null;
+      const deliveryStatus = body.deliveryStatus === undefined ? undefined : body.deliveryStatus;
+      const estimatedDispatchAt = body.estimatedDispatchAt === undefined ? undefined : String(body.estimatedDispatchAt).trim().slice(0, 10) || null;
+      if (trackingCode !== undefined || deliveryStatus !== undefined || estimatedDispatchAt !== undefined) {
+        await connection.execute("UPDATE commerce_orders SET tracking_code=IF(?,?,tracking_code),delivery_status=IF(?,?,delivery_status),estimated_dispatch_at=IF(?,?,estimated_dispatch_at) WHERE id=?", [trackingCode !== undefined, trackingCode ?? null, deliveryStatus !== undefined, deliveryStatus ?? null, estimatedDispatchAt !== undefined, estimatedDispatchAt ?? null, orderId]);
+        await connection.execute("INSERT INTO commerce_order_history(id,account_id,order_id,actor_user_id,event_type,notes,metadata) VALUES(?,?,?,?,?,?,?)", [randomUUID(), auth.account.id, orderId, auth.user.id, "fulfillment_updated", notes || "Dados de expedição atualizados", JSON.stringify({ tracking_code: trackingCode, delivery_status: deliveryStatus, estimated_dispatch_at: estimatedDispatchAt })]);
+      }
+      if (!nextStatus && !nextPayment && trackingCode === undefined && deliveryStatus === undefined && estimatedDispatchAt === undefined) throw new Error("UNCHANGED");
     });
     return Response.json({ success: true });
   } catch (error) {

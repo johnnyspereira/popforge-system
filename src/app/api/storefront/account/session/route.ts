@@ -17,22 +17,34 @@ export async function GET() {
   return Response.json({ authenticated: true, customer: { name: session.name, email: session.email } });
 }
 
-// Step 1 of portal access: knowing an email and an order number is not proof
-// of identity, so we only email a one-time link to the contact's own address.
+// Step 1 of portal access. An e-mail alone never authenticates a customer:
+// we only email a one-time link to that address. An order number is useful for
+// quicker matching but optional, so quote-only customers can use the account.
 export async function POST(request: Request) {
   const ip = clientIp(request);
   const ipLimit = checkRateLimit(`portal-link:${ip}`, { limit: 5, windowMs: 15 * 60_000 });
   if (!ipLimit.success) return rateLimitResponse(ipLimit);
   const body = await request.json().catch(() => null) as { email?: string; orderNumber?: string | number } | null;
-  const email = clean(body?.email, 320).toLowerCase(); const orderNumber = Number(body?.orderNumber);
-  if (!email.includes("@") || !Number.isSafeInteger(orderNumber) || orderNumber < 1) return Response.json({ error: "Indique o e-mail usado na compra e o número da encomenda." }, { status: 400 });
+  const email = clean(body?.email, 320).toLowerCase();
+  const rawOrderNumber = clean(body?.orderNumber, 24);
+  const orderNumber = rawOrderNumber ? Number(rawOrderNumber) : null;
+  if (!email.includes("@") || (rawOrderNumber && (!Number.isSafeInteger(orderNumber) || (orderNumber ?? 0) < 1))) return Response.json({ error: "Indique um e-mail válido e, se preencher, um número de encomenda válido." }, { status: 400 });
   if (!checkRateLimit(`portal-link-email:${email}`, { limit: 3, windowMs: 60 * 60_000 }).success) return Response.json(SENT);
   if (!emailDeliveryConfiguration().ready) return Response.json({ error: "O acesso por e-mail ainda não está disponível. Contacte-nos para saber o estado da encomenda." }, { status: 503 });
 
-  const rows = await selectRows<(RowDataPacket & { account_id: string; contact_id: string; name: string | null })[]>(
-    `SELECT o.account_id,o.contact_id,c.name FROM commerce_orders o JOIN contacts c ON c.id=o.contact_id
-      WHERE o.order_number=? AND LOWER(o.customer_email)=? AND LOWER(c.email)=? LIMIT 1`, [orderNumber, email, email],
-  );
+  const rows = orderNumber
+    ? await selectRows<(RowDataPacket & { account_id: string; contact_id: string; name: string | null })[]>(
+      `SELECT o.account_id,o.contact_id,c.name FROM commerce_orders o JOIN contacts c ON c.id=o.contact_id
+        WHERE o.order_number=? AND LOWER(o.customer_email)=? AND LOWER(c.email)=? LIMIT 1`, [orderNumber, email, email],
+    )
+    : await selectRows<(RowDataPacket & { account_id: string; contact_id: string; name: string | null })[]>(
+      `SELECT c.account_id,c.id AS contact_id,c.name FROM contacts c
+       WHERE LOWER(c.email)=? AND (
+         EXISTS(SELECT 1 FROM commerce_orders o WHERE o.account_id=c.account_id AND o.contact_id=c.id)
+         OR EXISTS(SELECT 1 FROM commerce_custom_requests r WHERE r.account_id=c.account_id AND r.contact_id=c.id)
+         OR EXISTS(SELECT 1 FROM commerce_quotes q WHERE q.account_id=c.account_id AND q.contact_id=c.id)
+       ) ORDER BY c.created_at DESC LIMIT 1`, [email],
+    );
   const match = rows[0];
   if (match) {
     const token = randomBytes(32).toString("base64url");

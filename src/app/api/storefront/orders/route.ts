@@ -8,6 +8,8 @@ import { clientIp, resolveStorefrontContact } from "@/lib/commerce/storefront-co
 type VariantRow = RowDataPacket & { id: string; account_id: string; product_id: string; sku: string; price: string | number; stock_quantity: string | number; track_stock: boolean | number; product_name: string };
 type CartInput = { variantId: string; quantity: number; customization?: Record<string, unknown> };
 const text = (value: unknown, length: number) => String(value ?? "").trim().slice(0, length);
+const paymentMethods = new Set(["bank_transfer", "mbway", "multibanco", "payment_link"]);
+const deliveryMethods = new Set(["ctt", "carrier", "collection"]);
 
 export async function POST(request: Request) {
   const limit = checkRateLimit(`storefront-order:${clientIp(request)}`, { limit: 10, windowMs: 10 * 60_000 });
@@ -15,12 +17,19 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
   const name = text(body?.name, 180), email = text(body?.email, 320).toLowerCase();
   const phone = text(body?.phone, 40).replace(/[^+\d]/g, "");
+  const paymentMethod = text(body?.paymentMethod, 64) || "payment_link";
+  const deliveryMethod = text(body?.deliveryMethod, 120) || "ctt";
+  const address = {
+    line1: text(body?.addressLine1, 180), line2: text(body?.addressLine2, 180) || null,
+    postalCode: text(body?.postalCode, 24), city: text(body?.city, 120), country: text(body?.country, 80) || "Portugal",
+  };
   const rawItems = Array.isArray(body?.items) ? body.items : body?.variantId ? [{ variantId: body.variantId, quantity: body.quantity }] : [];
   const items = rawItems.slice(0, 50).map((raw) => {
     const item = raw as Record<string, unknown>;
     return { variantId: text(item.variantId, 36), quantity: Math.max(1, Math.min(99, Math.floor(Number(item.quantity)) || 1)), customization: item.customization && typeof item.customization === "object" ? item.customization as Record<string, unknown> : {} } satisfies CartInput;
   }).filter((item) => item.variantId);
-  if (!name || !email.includes("@") || phone.length < 7 || !items.length) return Response.json({ error: "Preencha os dados de contacto e adicione pelo menos um produto." }, { status: 400 });
+  if (!name || !email.includes("@") || phone.length < 7 || !items.length || !address.line1 || !address.postalCode || !address.city) return Response.json({ error: "Preencha os dados de contacto, entrega e adicione pelo menos um produto." }, { status: 400 });
+  if (!paymentMethods.has(paymentMethod) || !deliveryMethods.has(deliveryMethod)) return Response.json({ error: "A opção de pagamento ou entrega é inválida." }, { status: 400 });
   if (new Set(items.map((item) => item.variantId)).size !== items.length) return Response.json({ error: "Cada variante deve aparecer apenas uma vez no carrinho." }, { status: 400 });
   try {
     const result = await transaction(async (connection) => {
@@ -40,7 +49,7 @@ export async function POST(request: Request) {
       const reviewRequired = Boolean(contact?.reviewRequired);
       const subtotal = items.reduce((sum, item) => sum + Number(selected.get(item.variantId)!.price) * item.quantity, 0);
       const orderId = randomUUID();
-      const [order] = await connection.execute<ResultSetHeader>("INSERT INTO commerce_orders(id,account_id,contact_id,customer_review_required,status,payment_status,channel,currency,subtotal,total,customer_email,customer_name,customer_phone,notes) VALUES(?,?,?,?,'pending_payment','pending','online_store','EUR',?,?,?,?,?,?)", [orderId, accountId, contactId, reviewRequired, subtotal, subtotal, email, name, phone, text(body?.notes, 4000) || null]);
+      const [order] = await connection.execute<ResultSetHeader>("INSERT INTO commerce_orders(id,account_id,contact_id,customer_review_required,status,payment_status,payment_method,channel,currency,subtotal,shipping_total,delivery_method,total,customer_email,customer_name,customer_phone,shipping_address,notes) VALUES(?,?,?,?,'pending_payment','pending',?,'online_store','EUR',?,?,?, ?,?,?,?, ?,?)", [orderId, accountId, contactId, reviewRequired, paymentMethod, subtotal, 0, deliveryMethod, subtotal, email, name, phone, JSON.stringify(address), text(body?.notes, 4000) || null]);
       let reserved = false;
       for (const item of items) {
         const variant = selected.get(item.variantId)!;
@@ -52,7 +61,7 @@ export async function POST(request: Request) {
         }
       }
       if (reserved) await connection.execute("UPDATE commerce_orders SET stock_state='reserved' WHERE id=?", [orderId]);
-      await connection.execute("INSERT INTO commerce_order_history(id,account_id,order_id,event_type,new_value,notes) VALUES(?,?,?,?,?,?)", [randomUUID(), accountId, orderId, "order_created", "pending_payment", "Encomenda criada pela loja online"]);
+      await connection.execute("INSERT INTO commerce_order_history(id,account_id,order_id,event_type,new_value,notes,metadata) VALUES(?,?,?,?,?,?,?)", [randomUUID(), accountId, orderId, "order_created", "pending_payment", "Encomenda criada pela loja online", JSON.stringify({ payment_method: paymentMethod, delivery_method: deliveryMethod })]);
       if (contact?.reviewRequired) {
         await connection.execute("INSERT INTO commerce_order_history(id,account_id,order_id,event_type,notes,metadata) VALUES(?,?,?,?,?,?)", [randomUUID(), accountId, orderId, "customer_review_required", "O telefone corresponde a um cliente existente com outro e-mail. Confirme manualmente antes de associar.", JSON.stringify({ conflict_contact_id: contact.conflictContactId })]);
       }
