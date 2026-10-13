@@ -26,11 +26,17 @@ $runner = @"
 "@
 Set-Content -LiteralPath (Join-Path $installDir 'run-worker.ps1') -Value $runner -Encoding UTF8
 
-$action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$installDir\run-worker.ps1`""
+$hiddenLauncher = @"
+Set shell = CreateObject("WScript.Shell")
+shell.Run "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File ""$installDir\run-worker.ps1""", 0, False
+"@
+Set-Content -LiteralPath (Join-Path $installDir 'run-worker-hidden.vbs') -Value $hiddenLauncher -Encoding ASCII
+
+$action = New-ScheduledTaskAction -Execute "$env:WINDIR\System32\wscript.exe" -Argument "`"$installDir\run-worker-hidden.vbs`""
 $start = (Get-Date).AddMinutes(1).ToString('s')
 $taskXml = @"
 <?xml version="1.0" encoding="UTF-16"?>
-<Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task"><Triggers><CalendarTrigger><StartBoundary>$start</StartBoundary><Enabled>true</Enabled><Repetition><Interval>PT1M</Interval><Duration>P1D</Duration><StopAtDurationEnd>false</StopAtDurationEnd></Repetition><ScheduleByDay><DaysInterval>1</DaysInterval></ScheduleByDay></CalendarTrigger></Triggers><Principals><Principal id="Author"><LogonType>InteractiveToken</LogonType><RunLevel>LeastPrivilege</RunLevel></Principal></Principals><Settings><MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy><StartWhenAvailable>true</StartWhenAvailable><ExecutionTimeLimit>PT30S</ExecutionTimeLimit></Settings><Actions Context="Author"><Exec><Command>powershell.exe</Command><Arguments>-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File &quot;$installDir\run-worker.ps1&quot;</Arguments></Exec></Actions></Task>
+<Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task"><Triggers><CalendarTrigger><StartBoundary>$start</StartBoundary><Enabled>true</Enabled><Repetition><Interval>PT1M</Interval><Duration>P1D</Duration><StopAtDurationEnd>false</StopAtDurationEnd></Repetition><ScheduleByDay><DaysInterval>1</DaysInterval></ScheduleByDay></CalendarTrigger></Triggers><Principals><Principal id="Author"><LogonType>InteractiveToken</LogonType><RunLevel>LeastPrivilege</RunLevel></Principal></Principals><Settings><MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy><StartWhenAvailable>true</StartWhenAvailable><ExecutionTimeLimit>PT30S</ExecutionTimeLimit></Settings><Actions Context="Author"><Exec><Command>$env:WINDIR\System32\wscript.exe</Command><Arguments>&quot;$installDir\run-worker-hidden.vbs&quot;</Arguments></Exec></Actions></Task>
 "@
 Register-ScheduledTask -TaskName $taskName -Xml $taskXml -Force | Out-Null
 Start-ScheduledTask -TaskName $taskName
