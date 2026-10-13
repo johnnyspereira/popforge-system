@@ -1508,6 +1508,12 @@
       "namedRegex": "^/commerce/produtos(?:/)?$"
     },
     {
+      "page": "/commerce/relatorios",
+      "regex": "^/commerce/relatorios(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/commerce/relatorios(?:/)?$"
+    },
+    {
       "page": "/contactos",
       "regex": "^/contactos(?:/)?$",
       "routeKeys": {},
