@@ -138,6 +138,7 @@ const navItems: NavItem[] = [
   { href: "/commerce/inventario", labelKey: "inventory", icon: Boxes },
   { href: "/commerce/impressoras", labelKey: "printers", icon: Printer },
   { href: "/commerce/financeiro", labelKey: "finance", icon: BadgeEuro },
+  { href: "/commerce/relatorios", labelKey: "reports", icon: BarChart3 },
   {
     href: "/contacts",
     labelKey: "contacts",
@@ -225,6 +226,7 @@ const navSections = [
       "/commerce/inventario",
       "/commerce/impressoras",
       "/commerce/financeiro",
+      "/commerce/relatorios",
       "/tasks",
     ],
   },

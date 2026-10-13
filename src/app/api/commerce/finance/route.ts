@@ -19,7 +19,7 @@ export async function GET() {
   if (!auth)
     return Response.json({ error: "Sessão inválida." }, { status: 401 });
   const id = auth.account.id;
-  const [summary, entries, orders] = await Promise.all([
+  const [summary, entries, orders, categories] = await Promise.all([
     selectRows<RowDataPacket[]>(
       `SELECT
       (SELECT COALESCE(SUM(total),0) FROM commerce_orders WHERE account_id=? AND payment_status='paid') AS online_revenue,
@@ -39,8 +39,17 @@ export async function GET() {
       "SELECT id,order_number,customer_name,total FROM commerce_orders WHERE account_id=? ORDER BY created_at DESC LIMIT 100",
       [id],
     ),
+    selectRows<RowDataPacket[]>(
+      "SELECT category,COALESCE(SUM(amount),0) AS total FROM commerce_financial_entries WHERE account_id=? AND entry_type='operating_expense' GROUP BY category ORDER BY total DESC LIMIT 8",
+      [id],
+    ),
   ]);
-  return Response.json({ summary: summary[0] || {}, entries, orders });
+  return Response.json({
+    summary: summary[0] || {},
+    entries,
+    orders,
+    categories,
+  });
 }
 
 export async function POST(request: Request) {
