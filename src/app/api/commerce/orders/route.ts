@@ -33,7 +33,10 @@ export async function GET(request: Request) {
     const [items, history, jobs] = await Promise.all([
       selectRows<RowDataPacket[]>("SELECT id,product_name,sku,quantity,unit_price,line_total,customization FROM commerce_order_items WHERE order_id=? ORDER BY created_at", [id]),
       selectRows<RowDataPacket[]>("SELECT h.id,h.event_type,h.previous_value,h.new_value,h.notes,h.created_at,p.full_name AS actor_name FROM commerce_order_history h LEFT JOIN profiles p ON p.user_id=h.actor_user_id WHERE h.order_id=? ORDER BY h.created_at DESC", [id]),
-      selectRows<RowDataPacket[]>("SELECT j.id,j.status,j.printer_name,j.estimated_minutes,j.actual_minutes,j.created_at,i.product_name FROM commerce_production_jobs j LEFT JOIN commerce_order_items i ON i.id=j.order_item_id WHERE j.order_item_id IN (SELECT id FROM commerce_order_items WHERE order_id=?) ORDER BY j.created_at DESC", [id]),
+      selectRows<RowDataPacket[]>(`SELECT j.id,j.status,j.printer_name,j.printer_file,j.printer_progress_percent,j.printer_last_seen_at,j.estimated_minutes,j.actual_minutes,j.created_at,i.product_name,p.name AS assigned_printer,
+        (SELECT COUNT(*) FROM commerce_production_files f WHERE f.production_job_id=j.id) AS internal_files
+        FROM commerce_production_jobs j LEFT JOIN commerce_order_items i ON i.id=j.order_item_id LEFT JOIN commerce_printers p ON p.id=j.printer_id
+        WHERE j.order_id=? OR j.order_item_id IN (SELECT id FROM commerce_order_items WHERE order_id=?) ORDER BY j.created_at DESC`, [id, id]),
     ]);
     return Response.json({ order, items, history, jobs });
   }
