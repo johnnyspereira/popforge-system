@@ -113,12 +113,12 @@ const CATEGORY_META: Record<
   { label: string; icon: LucideIcon; className: string }
 > = {
   inbox: {
-    label: 'Atendimento',
+    label: 'Clientes e mensagens',
     icon: Inbox,
     className: 'border-blue-500/30 bg-blue-500/10 text-blue-500',
   },
   sales: {
-    label: 'Comercial',
+    label: 'Encomendas',
     icon: Briefcase,
     className: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500',
   },
@@ -128,7 +128,7 @@ const CATEGORY_META: Record<
     className: 'border-rose-500/30 bg-rose-500/10 text-rose-500',
   },
   clinic: {
-    label: 'Agenda e clínica',
+    label: 'Produção',
     icon: CalendarDays,
     className: 'border-teal-500/30 bg-teal-500/10 text-teal-600',
   },
@@ -143,12 +143,12 @@ const CATEGORY_META: Record<
     className: 'border-violet-500/30 bg-violet-500/10 text-violet-500',
   },
   broadcast: {
-    label: 'Transmissões',
+    label: 'Marketing',
     icon: Radio,
     className: 'border-cyan-500/30 bg-cyan-500/10 text-cyan-500',
   },
   work_time: {
-    label: 'Jornada',
+    label: 'Operação',
     icon: TimerReset,
     className: 'border-amber-500/30 bg-amber-500/10 text-amber-500',
   },
@@ -794,6 +794,8 @@ export default function NotificationsPage() {
         </div>
       </header>
 
+      <CommerceOperationsPulse routerPush={(href) => router.push(href)} />
+
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
         <StatCard
           icon={Bell}
@@ -889,7 +891,7 @@ export default function NotificationsPage() {
         </div>
 
         <aside className="space-y-3">
-          <QuickActions routerPush={(href) => router.push(href)} />
+          <CommerceQuickActions routerPush={(href) => router.push(href)} />
           <DesktopAlerts
             permission={desktopPermission}
             onRequest={requestDesktopPermission}
@@ -1233,6 +1235,52 @@ function NotificationRow({
       </div>
     </article>
   );
+}
+
+type CommercePulse = { pendingPayment: number; printing: number; lowStock: number; readyToShip: number; printerIssue: number };
+
+function CommerceOperationsPulse({ routerPush }: { routerPush: (href: string) => void }) {
+  const [pulse, setPulse] = useState<CommercePulse | null>(null);
+  useEffect(() => {
+    let active = true;
+    void Promise.all([
+      fetch('/api/commerce/orders', { cache: 'no-store' }).then(r => r.ok ? r.json() : {}),
+      fetch('/api/commerce/workshop', { cache: 'no-store' }).then(r => r.ok ? r.json() : {}),
+      fetch('/api/commerce/printers', { cache: 'no-store' }).then(r => r.ok ? r.json() : {}),
+    ]).then(([orderData, workshopData, printerData]: Record<string, unknown>[]) => {
+      if (!active) return;
+      const orders = Array.isArray(orderData.orders) ? orderData.orders : [];
+      const jobs = Array.isArray(workshopData.jobs) ? workshopData.jobs : [];
+      const inventory = Array.isArray(workshopData.inventory) ? workshopData.inventory : [];
+      const printers = Array.isArray(printerData.printers) ? printerData.printers : [];
+      setPulse({
+        pendingPayment: orders.filter((order: { payment_status?: string }) => order.payment_status === 'pending' || order.payment_status === 'partially_paid').length,
+        printing: jobs.filter((job: { status?: string }) => job.status === 'printing').length,
+        lowStock: inventory.filter((item: { remaining_quantity?: string; low_stock_threshold?: string }) => Number(item.remaining_quantity) <= Number(item.low_stock_threshold)).length,
+        readyToShip: orders.filter((order: { status?: string }) => order.status === 'ready_to_ship').length,
+        printerIssue: printers.filter((printer: { status?: string }) => printer.status === 'error' || printer.status === 'offline').length,
+      });
+    });
+    return () => { active = false; };
+  }, []);
+  const cards = [
+    { label: 'Pagamentos pendentes', value: pulse?.pendingPayment, detail: 'encomendas a confirmar', href: '/commerce/encomendas', icon: Banknote, tone: 'text-amber-600' },
+    { label: 'Impressões em curso', value: pulse?.printing, detail: 'produção acompanhada', href: '/commerce/oficina', icon: Activity, tone: 'text-cyan-600' },
+    { label: 'Stock crítico', value: pulse?.lowStock, detail: 'materiais abaixo do mínimo', href: '/commerce/inventario', icon: AlertTriangle, tone: 'text-rose-600' },
+    { label: 'Prontas a expedir', value: pulse?.readyToShip, detail: 'aguardam envio ou levantamento', href: '/commerce/encomendas', icon: PackageCheck, tone: 'text-emerald-600' },
+    { label: 'Impressoras a verificar', value: pulse?.printerIssue, detail: 'offline ou com erro', href: '/commerce/impressoras', icon: WifiOff, tone: 'text-violet-600' },
+  ];
+  return <section className="rounded-xl border border-cyan-500/20 bg-cyan-500/[0.035] p-4"><div className="mb-3 flex items-center justify-between gap-3"><div><p className="text-sm font-semibold">Radar da operação POPForge</p><p className="text-xs text-muted-foreground">Dados reais de encomendas, oficina, stock e impressoras.</p></div><PackageCheck className="size-5 text-cyan-600"/></div><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">{cards.map(card => { const Icon = card.icon; return <button key={card.label} type="button" onClick={() => routerPush(card.href)} className="rounded-lg border bg-background p-3 text-left transition hover:border-cyan-500/50"><div className="flex items-center justify-between gap-2"><Icon className={`size-4 ${card.tone}`}/><span className="text-xl font-bold">{pulse ? card.value : '—'}</span></div><p className="mt-3 text-sm font-semibold">{card.label}</p><p className="mt-1 text-xs text-muted-foreground">{card.detail}</p></button>; })}</div></section>;
+}
+
+function CommerceQuickActions({ routerPush }: { routerPush: (href: string) => void }) {
+  const actions = [
+    { label: 'Encomendas', href: '/commerce/encomendas', icon: PackageCheck },
+    { label: 'Produção', href: '/commerce/oficina', icon: Activity },
+    { label: 'Stock e materiais', href: '/commerce/inventario', icon: ClipboardCheck },
+    { label: 'Impressoras', href: '/commerce/impressoras', icon: Wifi },
+  ];
+  return <div className="border-border bg-card rounded-lg border p-4"><div className="text-foreground flex items-center gap-2 text-sm font-semibold"><PackageCheck className="text-primary h-4 w-4"/>Operação POPForge</div><div className="mt-3 grid grid-cols-2 gap-2">{actions.map(action => { const Icon = action.icon; return <button key={action.href} type="button" onClick={() => routerPush(action.href)} className="border-border bg-background text-muted-foreground hover:border-primary/40 hover:bg-muted hover:text-foreground flex min-h-20 flex-col items-start justify-between rounded-md border p-3 text-left text-xs font-medium transition-colors"><Icon className="text-primary h-4 w-4"/>{action.label}</button>; })}</div></div>;
 }
 
 function QuickActions({ routerPush }: { routerPush: (href: string) => void }) {
