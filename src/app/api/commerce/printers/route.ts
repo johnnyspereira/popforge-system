@@ -14,7 +14,11 @@ export async function GET() {
   const auth = await authContext();
   if (!auth) return Response.json({ error: 'Sessão inválida.' }, { status: 401 });
   const printers = await selectRows<RowDataPacket[]>(`SELECT id,name,model,nozzle_diameter,local_address,connection_mode,status,current_file,progress_percent,nozzle_temperature,bed_temperature,last_error,last_seen_at,notes,created_at FROM commerce_printers WHERE account_id=? ORDER BY created_at DESC`, [auth.account.id]);
-  return Response.json({ printers });
+  const jobs = await selectRows<RowDataPacket[]>(`SELECT j.id,j.printer_id,j.title,j.status,j.priority,j.printer_file,j.printer_progress_percent,o.order_number,
+    (SELECT COUNT(*) FROM commerce_production_files f WHERE f.production_job_id=j.id) AS internal_files
+    FROM commerce_production_jobs j LEFT JOIN commerce_orders o ON o.id=j.order_id
+    WHERE j.account_id=? AND j.status NOT IN ('completed','failed') ORDER BY j.created_at DESC LIMIT 200`, [auth.account.id]);
+  return Response.json({ printers, jobs });
 }
 
 export async function POST(request: Request) {
@@ -37,6 +41,16 @@ export async function PATCH(request: Request) {
   if (!hasMinRole(auth.profile.account_role, 'agent')) return Response.json({ error: 'Sem permissão para gerir impressoras.' }, { status: 403 });
   const body = await request.json().catch(() => null) as Record<string, unknown> | null;
   const id = clean(body?.id, 36);
+  if (id && body?.action === 'assign_job') {
+    const jobId = clean(body?.jobId, 36);
+    if (!jobId) return Response.json({ error: 'Selecione uma encomenda de produção.' }, { status: 400 });
+    const result = await mutate(`UPDATE commerce_production_jobs j
+      INNER JOIN commerce_printers p ON p.id=? AND p.account_id=j.account_id
+      SET j.printer_id=p.id,j.printer_name=p.name
+      WHERE j.id=? AND j.account_id=?`, [id, jobId, auth.account.id]);
+    if (!result.affectedRows) return Response.json({ error: 'Não foi possível associar a encomenda a esta impressora.' }, { status: 404 });
+    return Response.json({ success: true, id, jobId });
+  }
   if (id && body?.action === 'update') {
     const name = clean(body?.name, 120);
     if (!name) return Response.json({ error: 'Indique o nome da impressora.' }, { status: 400 });
