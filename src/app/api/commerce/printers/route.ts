@@ -37,6 +37,16 @@ export async function PATCH(request: Request) {
   if (!hasMinRole(auth.profile.account_role, 'agent')) return Response.json({ error: 'Sem permissão para gerir impressoras.' }, { status: 403 });
   const body = await request.json().catch(() => null) as Record<string, unknown> | null;
   const id = clean(body?.id, 36);
+  if (id && body?.action === 'update') {
+    const name = clean(body?.name, 120);
+    if (!name) return Response.json({ error: 'Indique o nome da impressora.' }, { status: 400 });
+    const result = await mutate(
+      'UPDATE commerce_printers SET name=?,model=?,nozzle_diameter=?,local_address=?,notes=? WHERE id=? AND account_id=?',
+      [name, clean(body?.model, 160) || null, Number(body?.nozzleDiameter) || null, clean(body?.localAddress, 255) || null, clean(body?.notes, 2000) || null, id, auth.account.id],
+    );
+    if (!result.affectedRows) return Response.json({ error: 'Impressora não encontrada.' }, { status: 404 });
+    return Response.json({ success: true, id });
+  }
   if (!id || body?.action !== 'rotate_worker_key') return Response.json({ error: 'Pedido inválido.' }, { status: 400 });
   const workerKey = randomBytes(32).toString('base64url');
   const result = await mutate('UPDATE commerce_printers SET worker_key_hash=?, connection_mode=\'local_worker\' WHERE id=? AND account_id=?', [hash(workerKey), id, auth.account.id]);

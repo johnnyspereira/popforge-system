@@ -24,7 +24,7 @@ if (fs.existsSync(envPath)) {
 const required = ['POPFORGE_URL', 'POPFORGE_PRINTER_ID', 'POPFORGE_PRINTER_KEY'];
 for (const name of required) if (!process.env[name]) throw new Error(`Missing ${name}`);
 
-const statusUrl = process.env.PRINTER_STATUS_URL || 'http://192.168.1.10:4408/printer/objects/query?print_stats&virtual_sdcard&extruder&heater_bed';
+const statusUrl = process.env.PRINTER_STATUS_URL || 'http://192.168.1.6:4408/printer/objects/query?print_stats&virtual_sdcard&extruder&heater_bed';
 const response = await fetch(statusUrl, { signal: AbortSignal.timeout(8000) });
 if (!response.ok) throw new Error(`Printer returned HTTP ${response.status}`);
 const raw = await response.json();

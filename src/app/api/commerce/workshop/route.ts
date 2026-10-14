@@ -17,7 +17,7 @@ export async function GET() {
   const id = auth.account.id;
   const [inventory, jobs, orders, report, printers] = await Promise.all([
     selectRows<RowDataPacket[]>("SELECT id,sku,item_type,name,material,color,unit,purchase_total,purchased_quantity,remaining_quantity,low_stock_threshold,active FROM commerce_inventory_items WHERE account_id=? AND active=TRUE ORDER BY item_type,name", [id]),
-    selectRows<RowDataPacket[]>(`SELECT j.id,j.title,j.status,j.priority,j.due_date,j.printer_name,j.estimated_grams,j.actual_grams,j.estimated_minutes,j.actual_minutes,j.actual_labor_minutes,j.actual_labor_cost,j.actual_energy_cost,j.actual_other_cost,j.internal_notes,j.created_at,o.order_number,i.product_name
+    selectRows<RowDataPacket[]>(`SELECT j.id,j.title,j.status,j.priority,j.due_date,j.printer_id,j.printer_name,j.printer_file,j.printer_progress_percent,j.printer_last_seen_at,j.estimated_grams,j.actual_grams,j.estimated_minutes,j.actual_minutes,j.actual_labor_minutes,j.actual_labor_cost,j.actual_energy_cost,j.actual_other_cost,j.internal_notes,j.created_at,o.order_number,i.product_name
       FROM commerce_production_jobs j LEFT JOIN commerce_orders o ON o.id=j.order_id LEFT JOIN commerce_order_items i ON i.id=j.order_item_id
       WHERE j.account_id=? ORDER BY FIELD(j.status,'printing','preparing','queued','post_processing','quality_check','completed','failed'),FIELD(j.priority,'urgent','high','normal','low'),j.due_date IS NULL,j.due_date,j.created_at DESC LIMIT 200`, [id]),
     selectRows<RowDataPacket[]>("SELECT id,order_number,customer_name,customer_email,total,payment_status,status,created_at FROM commerce_orders WHERE account_id=? ORDER BY created_at DESC LIMIT 100", [id]),
@@ -68,7 +68,13 @@ async function createManualOrder(auth: NonNullable<Awaited<ReturnType<typeof aut
     await connection.execute("INSERT INTO finance_sale_items(id,sale_id,account_id,item_type,name_snapshot,quantity,unit_price,line_total,metadata) VALUES(?,?,?,?,?,?,?,?,?)", [randomUUID(), saleId, auth.account.id, "3d_print", productName, quantity, unitPrice, total, JSON.stringify({ commerce_order_id: orderId })]);
     if (paidAmount > 0) await connection.execute("INSERT INTO finance_payments(id,account_id,sale_id,received_by_user_id,method,status,amount,reference_code,notes) VALUES(?,?,?,?,?,'confirmed',?,?,?)", [randomUUID(), auth.account.id, saleId, auth.user.id, clean(body?.paymentMethod, 32) || "manual", Math.min(paidAmount, total), `ORDER-${order.insertId}`, "Pagamento registado na encomenda manual POPForge"]);
     await connection.execute("INSERT INTO commerce_order_items(id,account_id,order_id,product_name,quantity,unit_price,line_total,customization) VALUES(?,?,?,?,?,?,?,?)", [itemId, auth.account.id, orderId, productName, quantity, unitPrice, total, JSON.stringify({ manual_entry: true })]);
-    await connection.execute("INSERT INTO commerce_production_jobs(id,account_id,order_id,order_item_id,title,status,priority,due_date,printer_name,estimated_minutes,estimated_grams,internal_notes) VALUES(?,?,?,?,?,'queued',?,?,?,?,?,?)", [jobId, auth.account.id, orderId, itemId, productName, priority, clean(body?.dueDate, 10) || null, clean(body?.printerName, 120) || null, Math.max(0, Math.floor(number(body?.estimatedMinutes))), Math.max(0, number(body?.estimatedGrams)), clean(body?.productionNotes, 5000) || null]);
+    const printerId = clean(body?.printerId, 36);
+    let printer: (RowDataPacket & { id: string; name: string }) | undefined;
+    if (printerId) {
+      const [printerRows] = await connection.execute<(RowDataPacket & { id: string; name: string })[]>("SELECT id,name FROM commerce_printers WHERE id=? AND account_id=? LIMIT 1", [printerId, auth.account.id]);
+      printer = printerRows[0];
+    }
+    await connection.execute("INSERT INTO commerce_production_jobs(id,account_id,order_id,order_item_id,title,status,priority,due_date,printer_id,printer_name,estimated_minutes,estimated_grams,internal_notes) VALUES(?,?,?,?,?,'queued',?,?,?,?,?,?,?)", [jobId, auth.account.id, orderId, itemId, productName, priority, clean(body?.dueDate, 10) || null, printer?.id || null, printer?.name || clean(body?.printerName, 120) || null, Math.max(0, Math.floor(number(body?.estimatedMinutes))), Math.max(0, number(body?.estimatedGrams)), clean(body?.productionNotes, 5000) || null]);
     await connection.execute("INSERT INTO commerce_order_history(id,account_id,order_id,actor_user_id,event_type,new_value,notes,metadata) VALUES(?,?,?,?,?,?,?,?)", [randomUUID(), auth.account.id, orderId, auth.user.id, "manual_order_created", paymentStatus, "Encomenda criada manualmente na oficina", JSON.stringify({ finance_sale_id: saleId, production_job_id: jobId })]);
     return { success: true, orderNumber: order.insertId, orderId, jobId };
   });
@@ -99,6 +105,14 @@ async function updateJob(auth: NonNullable<Awaited<ReturnType<typeof authContext
   const energyCost = body?.energyCost === undefined ? null : Math.max(0, number(body?.energyCost));
   const laborCost = body?.laborCost === undefined ? null : Math.max(0, number(body?.laborCost));
   const otherCost = body?.otherCost === undefined ? null : Math.max(0, number(body?.otherCost));
-  const [result] = await transaction(async (connection) => connection.execute<ResultSetHeader>("UPDATE commerce_production_jobs SET status=?,printer_name=?,actual_minutes=COALESCE(?,actual_minutes),actual_labor_minutes=COALESCE(?,actual_labor_minutes),actual_labor_cost=COALESCE(?,actual_labor_cost),actual_energy_cost=COALESCE(?,actual_energy_cost),actual_other_cost=COALESCE(?,actual_other_cost),internal_notes=?,started_at=CASE WHEN ?='printing' AND started_at IS NULL THEN UTC_TIMESTAMP(3) ELSE started_at END,completed_at=CASE WHEN ? IN ('completed','failed') THEN UTC_TIMESTAMP(3) ELSE completed_at END WHERE id=? AND account_id=?", [status, clean(body?.printerName, 120) || null, actualMinutes, laborMinutes, laborCost, energyCost, otherCost, clean(body?.notes, 5000) || null, status, status, jobId, auth.account.id]));
+  const [result] = await transaction(async (connection) => {
+    const printerId = clean(body?.printerId, 36);
+    let printer: (RowDataPacket & { id: string; name: string }) | undefined;
+    if (printerId) {
+      const [printers] = await connection.execute<(RowDataPacket & { id: string; name: string })[]>("SELECT id,name FROM commerce_printers WHERE id=? AND account_id=? LIMIT 1", [printerId, auth.account.id]);
+      printer = printers[0];
+    }
+    return connection.execute<ResultSetHeader>("UPDATE commerce_production_jobs SET status=?,printer_id=?,printer_name=?,actual_minutes=COALESCE(?,actual_minutes),actual_labor_minutes=COALESCE(?,actual_labor_minutes),actual_labor_cost=COALESCE(?,actual_labor_cost),actual_energy_cost=COALESCE(?,actual_energy_cost),actual_other_cost=COALESCE(?,actual_other_cost),internal_notes=?,started_at=CASE WHEN ?='printing' AND started_at IS NULL THEN UTC_TIMESTAMP(3) ELSE started_at END,completed_at=CASE WHEN ? IN ('completed','failed') THEN UTC_TIMESTAMP(3) ELSE completed_at END WHERE id=? AND account_id=?", [status, printer?.id || null, printer?.name || clean(body?.printerName, 120) || null, actualMinutes, laborMinutes, laborCost, energyCost, otherCost, clean(body?.notes, 5000) || null, status, status, jobId, auth.account.id]);
+  });
   if (!result.affectedRows) throw new Error("JOB_NOT_FOUND"); return { success: true };
 }

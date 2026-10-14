@@ -5,8 +5,8 @@ type Item = RowDataPacket & { id: string; product_name: string; quantity: number
 
 /** Creates one queued job per order item, including only explicit product defaults. */
 export async function createProductionPlan(connection: PoolConnection, input: { accountId: string; orderId: string; actorUserId?: string | null }) {
-  const [printers] = await connection.execute<(RowDataPacket & { name: string })[]>("SELECT name FROM commerce_printers WHERE account_id=? ORDER BY status='idle' DESC,last_seen_at DESC,created_at ASC LIMIT 1", [input.accountId]);
-  const defaultPrinter = printers[0]?.name ?? null;
+  const [printers] = await connection.execute<(RowDataPacket & { id: string; name: string })[]>("SELECT id,name FROM commerce_printers WHERE account_id=? ORDER BY status='idle' DESC,last_seen_at DESC,created_at ASC LIMIT 1", [input.accountId]);
+  const defaultPrinter = printers[0] ?? null;
   const [items] = await connection.execute<Item[]>(`SELECT i.id,i.product_name,i.quantity,v.production_minutes,v.production_grams,v.production_material_sku,v.production_printer_name,
       inv.id AS inventory_id,inv.sku AS inventory_sku,inv.name AS inventory_name,inv.purchase_total,inv.purchased_quantity
     FROM commerce_order_items i
@@ -20,7 +20,7 @@ export async function createProductionPlan(connection: PoolConnection, input: { 
     const minutes = item.production_minutes === null ? null : Math.max(0, Number(item.production_minutes) * Number(item.quantity));
     const grams = item.production_grams === null ? null : Math.max(0, Number(item.production_grams) * Number(item.quantity));
     const jobId = randomUUID();
-    await connection.execute("INSERT INTO commerce_production_jobs(id,account_id,order_id,order_item_id,title,status,printer_name,material_inventory_id,estimated_minutes,estimated_grams) VALUES(?,?,?,?,?,'queued',?,?,?,?)", [jobId, input.accountId, input.orderId, item.id, item.product_name, item.production_printer_name || defaultPrinter, item.inventory_id, minutes, grams]);
+    await connection.execute("INSERT INTO commerce_production_jobs(id,account_id,order_id,order_item_id,title,status,printer_id,printer_name,material_inventory_id,estimated_minutes,estimated_grams) VALUES(?,?,?,?,?,'queued',?,?,?,?,?)", [jobId, input.accountId, input.orderId, item.id, item.product_name, defaultPrinter?.id || null, item.production_printer_name || defaultPrinter?.name || null, item.inventory_id, minutes, grams]);
     if (item.inventory_id && grams && grams > 0) {
       const unitCost = Number(item.purchased_quantity) > 0 ? Number(item.purchase_total || 0) / Number(item.purchased_quantity) : 0;
       await connection.execute("INSERT INTO commerce_production_material_usage(id,account_id,production_job_id,inventory_item_id,usage_type,quantity,unit_cost,item_sku,item_name,notes,recorded_by_user_id) VALUES(?,?,?,?, 'planned',?,?,?,?,?,?)", [randomUUID(), input.accountId, jobId, item.inventory_id, grams, unitCost, item.inventory_sku, item.inventory_name, "Planeado automaticamente a partir da ficha do produto", input.actorUserId || null]);

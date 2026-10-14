@@ -22,7 +22,7 @@ $runner = @"
 `$node = '$($node.Replace("'", "''"))'
 `$worker = Join-Path `$PSScriptRoot 'popforge-printer-worker.mjs'
 `$log = Join-Path `$PSScriptRoot 'worker.log'
-& `$node `$worker *>> `$log
+& `$node --use-system-ca `$worker *>> `$log
 "@
 Set-Content -LiteralPath (Join-Path $installDir 'run-worker.ps1') -Value $runner -Encoding UTF8
 
