@@ -938,6 +938,12 @@
       "namedRegex": "^/api/commerce/printers/telemetry(?:/)?$"
     },
     {
+      "page": "/api/commerce/production-files",
+      "regex": "^/api/commerce/production\\-files(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/commerce/production\\-files(?:/)?$"
+    },
+    {
       "page": "/api/commerce/products",
       "regex": "^/api/commerce/products(?:/)?$",
       "routeKeys": {},
