@@ -30,7 +30,8 @@ export async function GET() {
       (SELECT COUNT(*) FROM commerce_inventory_items WHERE account_id=? AND active=TRUE AND remaining_quantity<=low_stock_threshold) AS low_stock`, [id, id, id, id, id, id]),
     selectRows<RowDataPacket[]>("SELECT id,name,model,status FROM commerce_printers WHERE account_id=? ORDER BY status='idle' DESC,created_at ASC", [id]),
   ]);
-  return Response.json({ inventory, jobs, orders, report: report[0] || {}, printers });
+  const units = await selectRows<RowDataPacket[]>(`SELECT id,production_job_id,unit_number,status,color,material_inventory_id,printed_at,quality_checked_at,quality_notes FROM commerce_production_units WHERE account_id=? ORDER BY production_job_id,unit_number`, [id]);
+  return Response.json({ inventory, jobs, units, orders, report: report[0] || {}, printers });
 }
 
 export async function POST(request: Request) {
@@ -43,6 +44,7 @@ export async function POST(request: Request) {
     if (action === "manual_order") return Response.json(await createManualOrder(auth, body));
     if (action === "consume_material") return Response.json(await consumeMaterial(auth, body));
     if (action === "update_job") return Response.json(await updateJob(auth, body));
+    if (action === "update_unit") return Response.json(await updateUnit(auth, body));
     return Response.json({ error: "Operação inválida." }, { status: 400 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
@@ -75,6 +77,7 @@ async function createManualOrder(auth: NonNullable<Awaited<ReturnType<typeof aut
       printer = printerRows[0];
     }
     await connection.execute("INSERT INTO commerce_production_jobs(id,account_id,order_id,order_item_id,title,status,priority,due_date,printer_id,printer_name,estimated_minutes,estimated_grams,internal_notes) VALUES(?,?,?,?,?,'queued',?,?,?,?,?,?,?)", [jobId, auth.account.id, orderId, itemId, productName, priority, clean(body?.dueDate, 10) || null, printer?.id || null, printer?.name || clean(body?.printerName, 120) || null, Math.max(0, Math.floor(number(body?.estimatedMinutes))), Math.max(0, number(body?.estimatedGrams)), clean(body?.productionNotes, 5000) || null]);
+    for (let unitNumber = 1; unitNumber <= quantity; unitNumber += 1) await connection.execute("INSERT INTO commerce_production_units(id,account_id,production_job_id,unit_number,status) VALUES(?,?,?,?,'pending')", [randomUUID(), auth.account.id, jobId, unitNumber]);
     await connection.execute("INSERT INTO commerce_order_history(id,account_id,order_id,actor_user_id,event_type,new_value,notes,metadata) VALUES(?,?,?,?,?,?,?,?)", [randomUUID(), auth.account.id, orderId, auth.user.id, "manual_order_created", paymentStatus, "Encomenda criada manualmente na oficina", JSON.stringify({ finance_sale_id: saleId, production_job_id: jobId })]);
     return { success: true, orderNumber: order.insertId, orderId, jobId };
   });
@@ -115,4 +118,20 @@ async function updateJob(auth: NonNullable<Awaited<ReturnType<typeof authContext
     return connection.execute<ResultSetHeader>("UPDATE commerce_production_jobs SET status=?,printer_id=?,printer_name=?,actual_minutes=COALESCE(?,actual_minutes),actual_labor_minutes=COALESCE(?,actual_labor_minutes),actual_labor_cost=COALESCE(?,actual_labor_cost),actual_energy_cost=COALESCE(?,actual_energy_cost),actual_other_cost=COALESCE(?,actual_other_cost),internal_notes=?,started_at=CASE WHEN ?='printing' AND started_at IS NULL THEN UTC_TIMESTAMP(3) ELSE started_at END,completed_at=CASE WHEN ? IN ('completed','failed') THEN UTC_TIMESTAMP(3) ELSE completed_at END WHERE id=? AND account_id=?", [status, printer?.id || null, printer?.name || clean(body?.printerName, 120) || null, actualMinutes, laborMinutes, laborCost, energyCost, otherCost, clean(body?.notes, 5000) || null, status, status, jobId, auth.account.id]);
   });
   if (!result.affectedRows) throw new Error("JOB_NOT_FOUND"); return { success: true };
+}
+
+async function updateUnit(auth: NonNullable<Awaited<ReturnType<typeof authContext>>>, body: Record<string, unknown> | null) {
+  const unitId = clean(body?.unitId, 36);
+  const status = clean(body?.unitStatus, 30);
+  const allowed = new Set(['pending', 'printing', 'printed', 'quality_check', 'approved', 'rejected', 'reprint']);
+  if (!unitId || !allowed.has(status)) throw new Error('INVALID_UNIT_STATUS');
+  const [result] = await transaction(async (connection) => connection.execute<ResultSetHeader>(
+    `UPDATE commerce_production_units SET status=?, color=COALESCE(NULLIF(?,''),color), quality_notes=?,
+      printed_at=CASE WHEN ? IN ('printed','quality_check','approved','rejected') AND printed_at IS NULL THEN UTC_TIMESTAMP(3) ELSE printed_at END,
+      quality_checked_at=CASE WHEN ? IN ('approved','rejected') THEN UTC_TIMESTAMP(3) ELSE quality_checked_at END
+      WHERE id=? AND account_id=?`,
+    [status, clean(body?.color, 80), clean(body?.qualityNotes, 2000) || null, status, status, unitId, auth.account.id],
+  ));
+  if (!result.affectedRows) throw new Error('UNIT_NOT_FOUND');
+  return { success: true };
 }
