@@ -1,0 +1,2 @@
+ALTER TABLE commerce_printers
+  ADD COLUMN IF NOT EXISTS local_port INT UNSIGNED NOT NULL DEFAULT 44808 AFTER local_address;
