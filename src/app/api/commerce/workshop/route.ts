@@ -59,7 +59,7 @@ async function createManualOrder(auth: NonNullable<Awaited<ReturnType<typeof aut
   const customerName = clean(body?.customerName, 180), customerEmail = clean(body?.customerEmail, 320).toLowerCase(), customerPhone = clean(body?.customerPhone, 40).replace(/[^+\d]/g, "");
   const productName = clean(body?.productName, 180), quantity = Math.max(1, Math.floor(number(body?.quantity, 1))), unitPrice = Math.max(0, number(body?.unitPrice));
   const paidAmount = Math.max(0, number(body?.paidAmount)); const total = Math.round(quantity * unitPrice * 100) / 100;
-  if (!customerName || !customerEmail.includes("@") || customerPhone.length < 7 || !productName || total <= 0) throw new Error("INVALID_ORDER");
+  if (!customerName || (customerEmail && !customerEmail.includes("@")) || (customerPhone && customerPhone.length < 7) || !productName || total <= 0) throw new Error("INVALID_ORDER");
   const priority = ["low", "normal", "high", "urgent"].includes(clean(body?.priority, 12)) ? clean(body?.priority, 12) : "normal";
   return transaction(async (connection) => {
     const contact = await resolveStorefrontContact(connection, { accountId: auth.account.id, ownerUserId: auth.user.id, name: customerName, email: customerEmail, phone: customerPhone, create: true });
