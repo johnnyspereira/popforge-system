@@ -1,12 +1,14 @@
 [CmdletBinding()]
 param(
-  [string]$ConfigPath = (Join-Path $PSScriptRoot '.env')
+  [string]$ConfigPath
 )
 
 $ErrorActionPreference = 'Stop'
+$scriptRoot = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Definition }
+if (-not $ConfigPath) { $ConfigPath = Join-Path $scriptRoot '.env' }
 $taskName = 'POPForge Printer Worker'
 $installDir = Join-Path $env:LOCALAPPDATA 'POPForge\PrinterWorker'
-$sourceWorker = Join-Path $PSScriptRoot 'popforge-printer-worker.mjs'
+$sourceWorker = Join-Path $scriptRoot 'popforge-printer-worker.mjs'
 
 if (-not (Test-Path -LiteralPath $sourceWorker)) { throw "Não foi encontrado $sourceWorker" }
 if (-not (Test-Path -LiteralPath $ConfigPath)) {
