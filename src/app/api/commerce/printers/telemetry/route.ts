@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   const printerId = clean(body?.printerId, 36);
   if (!key || !printerId) return Response.json({ error: 'Credenciais de telemetria inválidas.' }, { status: 401 });
   const rows = await selectRows<(RowDataPacket & { worker_key_hash: string | null })[]>('SELECT worker_key_hash FROM commerce_printers WHERE id=? LIMIT 1', [printerId]);
-  if (!rows[0]?.worker_key_hash || hash(key) !== rows[0].worker_key_hash) return Response.json({ error: 'Credenciais de telemetria inválidas.' }, { status: 401 });
+  if (!rows[0]?.worker_key_hash || hash(key) !== rows[0].worker_key_hash) return Response.json({ error: 'Chave do worker inválida ou desatualizada. Gere uma nova chave no Centro de impressoras e atualize o .env local.' }, { status: 401 });
   const status = ['offline', 'idle', 'printing', 'paused', 'error'].includes(clean(body?.status, 16)) ? clean(body?.status, 16) : 'offline';
   const currentFile = clean(body?.currentFile, 255) || null; const progress = num(body?.progressPercent); const updates: CustomerUpdate[] = [];
   await transaction(async (connection) => {
