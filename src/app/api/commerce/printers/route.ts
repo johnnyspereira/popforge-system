@@ -13,7 +13,7 @@ async function authContext() { const session = await getSession(); return sessio
 export async function GET() {
   const auth = await authContext();
   if (!auth) return Response.json({ error: 'Sessão inválida.' }, { status: 401 });
-  const printers = await selectRows<RowDataPacket[]>(`SELECT id,name,model,nozzle_diameter,local_address,connection_mode,status,current_file,progress_percent,nozzle_temperature,bed_temperature,last_error,last_seen_at,notes,created_at FROM commerce_printers WHERE account_id=? ORDER BY created_at DESC`, [auth.account.id]);
+  const printers = await selectRows<RowDataPacket[]>(`SELECT id,name,model,nozzle_diameter,local_address,local_port,connection_mode,status,current_file,progress_percent,nozzle_temperature,bed_temperature,last_error,last_seen_at,notes,created_at FROM commerce_printers WHERE account_id=? ORDER BY created_at DESC`, [auth.account.id]);
   const jobs = await selectRows<RowDataPacket[]>(`SELECT j.id,j.printer_id,j.title,j.status,j.priority,j.printer_file,j.printer_progress_percent,o.order_number,
     (SELECT COUNT(*) FROM commerce_production_files f WHERE f.production_job_id=j.id) AS internal_files
     FROM commerce_production_jobs j LEFT JOIN commerce_orders o ON o.id=j.order_id
@@ -26,12 +26,12 @@ export async function POST(request: Request) {
   if (!auth) return Response.json({ error: 'Sessão inválida.' }, { status: 401 });
   if (!hasMinRole(auth.profile.account_role, 'agent')) return Response.json({ error: 'Sem permissão para gerir impressoras.' }, { status: 403 });
   const body = await request.json().catch(() => null) as Record<string, unknown> | null;
-  const name = clean(body?.name, 120); const localAddress = clean(body?.localAddress, 255);
+  const name = clean(body?.name, 120); const localAddress = clean(body?.localAddress, 255); const localPort = Math.max(1, Math.min(65535, Number(body?.localPort) || 44808));
   if (!name) return Response.json({ error: 'Indique o nome da impressora.' }, { status: 400 });
   const connectionMode = body?.connectionMode === 'local_worker' ? 'local_worker' : 'manual';
   const workerKey = connectionMode === 'local_worker' ? randomBytes(32).toString('base64url') : null;
   const id = randomUUID();
-  await mutate(`INSERT INTO commerce_printers(id,account_id,name,model,nozzle_diameter,local_address,connection_mode,worker_key_hash,status,notes) VALUES(?,?,?,?,?,?,?,?,?,?)`, [id, auth.account.id, name, clean(body?.model, 160) || null, Number(body?.nozzleDiameter) || null, localAddress || null, connectionMode, workerKey ? hash(workerKey) : null, 'offline', clean(body?.notes, 2000) || null]);
+  await mutate(`INSERT INTO commerce_printers(id,account_id,name,model,nozzle_diameter,local_address,local_port,connection_mode,worker_key_hash,status,notes) VALUES(?,?,?,?,?,?,?,?,?,?,?)`, [id, auth.account.id, name, clean(body?.model, 160) || null, Number(body?.nozzleDiameter) || null, localAddress || null, localPort, connectionMode, workerKey ? hash(workerKey) : null, 'offline', clean(body?.notes, 2000) || null]);
   return Response.json({ success: true, id, workerKey });
 }
 
@@ -55,8 +55,8 @@ export async function PATCH(request: Request) {
     const name = clean(body?.name, 120);
     if (!name) return Response.json({ error: 'Indique o nome da impressora.' }, { status: 400 });
     const result = await mutate(
-      'UPDATE commerce_printers SET name=?,model=?,nozzle_diameter=?,local_address=?,notes=? WHERE id=? AND account_id=?',
-      [name, clean(body?.model, 160) || null, Number(body?.nozzleDiameter) || null, clean(body?.localAddress, 255) || null, clean(body?.notes, 2000) || null, id, auth.account.id],
+      'UPDATE commerce_printers SET name=?,model=?,nozzle_diameter=?,local_address=?,local_port=?,notes=? WHERE id=? AND account_id=?',
+      [name, clean(body?.model, 160) || null, Number(body?.nozzleDiameter) || null, clean(body?.localAddress, 255) || null, Math.max(1, Math.min(65535, Number(body?.localPort) || 44808)), clean(body?.notes, 2000) || null, id, auth.account.id],
     );
     if (!result.affectedRows) return Response.json({ error: 'Impressora não encontrada.' }, { status: 404 });
     return Response.json({ success: true, id });
