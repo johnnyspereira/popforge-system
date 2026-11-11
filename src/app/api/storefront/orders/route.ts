@@ -51,12 +51,18 @@ export async function POST(request: Request) {
       const reviewRequired = Boolean(contact?.reviewRequired);
       const subtotal = items.reduce((sum, item) => sum + Number(selected.get(item.variantId)!.price) * item.quantity, 0);
       const orderId = randomUUID();
-      const [order] = await connection.execute<ResultSetHeader>("INSERT INTO commerce_orders(id,account_id,contact_id,customer_review_required,status,payment_status,payment_method,channel,currency,subtotal,shipping_total,delivery_method,total,customer_email,customer_name,customer_phone,shipping_address,notes) VALUES(?,?,?,?,'pending_payment','pending',?,'online_store','EUR',?,?,?, ?,?,?,?, ?,?)", [orderId, accountId, contactId, reviewRequired, paymentMethod, subtotal, 0, deliveryMethod, subtotal, email, name, phone, JSON.stringify(address), text(body?.notes, 4000) || null]);
+      const saleId = randomUUID();
+      await connection.execute(
+        "INSERT INTO finance_sales(id,account_id,contact_id,created_by_user_id,status,currency,subtotal,total_amount,paid_amount,balance_due,notes) VALUES(?,?,?,?,?,'EUR',?,?,?,?,?)",
+        [saleId, accountId, contactId, owners[0].owner_user_id, "open", subtotal, subtotal, 0, subtotal, `Loja online · encomenda ${orderId}`],
+      );
+      const [order] = await connection.execute<ResultSetHeader>("INSERT INTO commerce_orders(id,account_id,contact_id,finance_sale_id,customer_review_required,status,payment_status,payment_method,channel,currency,subtotal,shipping_total,delivery_method,total,customer_email,customer_name,customer_phone,shipping_address,notes) VALUES(?,?,?,?,?,'pending_payment','pending',?,'online_store','EUR',?,?,?, ?,?,?,?, ?,?)", [orderId, accountId, contactId, saleId, reviewRequired, paymentMethod, subtotal, 0, deliveryMethod, subtotal, email, name, phone, JSON.stringify(address), text(body?.notes, 4000) || null]);
       let reserved = false;
       for (const item of items) {
         const variant = selected.get(item.variantId)!;
         const total = Number(variant.price) * item.quantity;
         await connection.execute("INSERT INTO commerce_order_items(id,account_id,order_id,product_id,variant_id,sku,product_name,quantity,unit_price,line_total,customization) VALUES(?,?,?,?,?,?,?,?,?,?,?)", [randomUUID(), accountId, orderId, variant.product_id, variant.id, variant.sku, variant.product_name, item.quantity, Number(variant.price), total, JSON.stringify(item.customization)]);
+        await connection.execute("INSERT INTO finance_sale_items(id,sale_id,account_id,item_type,source_id,name_snapshot,reference_snapshot,quantity,unit_price,line_total,metadata) VALUES(?,?,?,?,?,?,?,?,?,?,?)", [randomUUID(), saleId, accountId, "3d_print", variant.product_id, variant.product_name, variant.sku, item.quantity, Number(variant.price), total, JSON.stringify({ commerce_order_id: orderId, commerce_variant_id: variant.id })]);
         if (Boolean(variant.track_stock)) {
           await reserveVariantStock(connection, { accountId, orderId, reference: `ORDER-${order.insertId}`, variantId: variant.id, quantity: item.quantity, notes: "Reserva criada pela loja online" });
           reserved = true;
@@ -70,7 +76,7 @@ export async function POST(request: Request) {
       // The jobs are queued from the product's explicit production defaults.
       // They are not started until the order is confirmed by the operator.
       await createProductionPlan(connection, { accountId, orderId, actorUserId: owners[0].owner_user_id });
-      return { orderNumber: order.insertId, orderId };
+      return { orderNumber: order.insertId, orderId, saleId };
     });
     return Response.json({ success: true, ...result }, { status: 201 });
   } catch (error) {
