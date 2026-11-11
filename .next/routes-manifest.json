@@ -1214,10 +1214,22 @@
       "namedRegex": "^/api/storefront/account/verify(?:/)?$"
     },
     {
+      "page": "/api/storefront/checkout-preview",
+      "regex": "^/api/storefront/checkout\\-preview(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/storefront/checkout\\-preview(?:/)?$"
+    },
+    {
       "page": "/api/storefront/orders",
       "regex": "^/api/storefront/orders(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/api/storefront/orders(?:/)?$"
+    },
+    {
+      "page": "/api/storefront/payments/stripe",
+      "regex": "^/api/storefront/payments/stripe(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/storefront/payments/stripe(?:/)?$"
     },
     {
       "page": "/api/storefront/requests",
