@@ -29,7 +29,8 @@ export async function POST(request: Request) {
     const item = raw as Record<string, unknown>;
     return { variantId: text(item.variantId, 36), quantity: Math.max(1, Math.min(99, Math.floor(Number(item.quantity)) || 1)), customization: item.customization && typeof item.customization === "object" ? item.customization as Record<string, unknown> : {} } satisfies CartInput;
   }).filter((item) => item.variantId);
-  if (!name || !email.includes("@") || phone.length < 7 || !items.length || !address.line1 || !address.postalCode || !address.city) return Response.json({ error: "Preencha os dados de contacto, entrega e adicione pelo menos um produto." }, { status: 400 });
+  const needsAddress = deliveryMethod !== "collection";
+  if (!name || !email.includes("@") || phone.length < 7 || !items.length || (needsAddress && (!address.line1 || !address.postalCode || !address.city))) return Response.json({ error: "Preencha os dados de contacto, entrega e adicione pelo menos um produto." }, { status: 400 });
   if (!paymentMethods.has(paymentMethod) || !deliveryMethods.has(deliveryMethod)) return Response.json({ error: "A opção de pagamento ou entrega é inválida." }, { status: 400 });
   if (new Set(items.map((item) => item.variantId)).size !== items.length) return Response.json({ error: "Cada variante deve aparecer apenas uma vez no carrinho." }, { status: 400 });
   try {
