@@ -40,6 +40,7 @@ type Product = {
   material: string | null;
   color: string | null;
   weight_grams: string | null;
+  kitComponents?: Array<{ variantId: string; quantity: number }>;
 };
 type FormState = {
   id?: string;
@@ -60,6 +61,7 @@ type FormState = {
   featured: boolean;
   trackStock: boolean;
   variantName: string;
+  kitComponents: Array<{ variantId: string; quantity: number }>;
 };
 const empty: FormState = {
   name: "",
@@ -77,6 +79,7 @@ const empty: FormState = {
   customizable: false,
   featured: false,
   trackStock: true,
+  kitComponents: [],
   variantName: "Padrão",
 };
 const euro = (value: unknown) =>
@@ -159,6 +162,7 @@ export function ProductCatalog() {
       customizable: Boolean(product.customizable),
       featured: Boolean(product.featured),
       trackStock: Boolean(product.track_stock),
+      kitComponents: product.kitComponents || [],
       variantName: product.variant_name || "Padrão",
     });
     setError("");
@@ -556,6 +560,25 @@ export function ProductCatalog() {
                     </Field>
                   </div>
                 </Section>
+                {form.productType === "kit" ? (
+                  <Section title="Composição do kit">
+                    <p className="mb-3 text-sm text-muted-foreground">Escolha as peças que devem estar concluídas para este kit poder seguir para expedição.</p>
+                    <div className="space-y-3">
+                      {form.kitComponents.map((component, index) => {
+                        const selected = products.find((product) => product.variant_id === component.variantId);
+                        return <div key={`${component.variantId}-${index}`} className="grid gap-2 rounded-xl border p-3 sm:grid-cols-[1fr_110px_auto]">
+                          <select value={component.variantId} onChange={(event) => field("kitComponents", form.kitComponents.map((item, itemIndex) => itemIndex === index ? { ...item, variantId: event.target.value } : item))} className="h-10 rounded-lg border bg-background px-3 text-sm">
+                            <option value="">Escolher peça</option>
+                            {products.filter((product) => product.variant_id !== form.variantId && product.product_type !== "kit").map((product) => <option key={product.variant_id} value={product.variant_id}>{product.name} · {product.sku}</option>)}
+                          </select>
+                          <Input value={String(component.quantity)} onChange={(event) => field("kitComponents", form.kitComponents.map((item, itemIndex) => itemIndex === index ? { ...item, quantity: Math.max(1, Number(event.target.value) || 1) } : item))} type="number" min="1" aria-label={selected ? `Quantidade de ${selected.name}` : "Quantidade"} />
+                          <Button type="button" variant="outline" onClick={() => field("kitComponents", form.kitComponents.filter((_, itemIndex) => itemIndex !== index))}>Remover</Button>
+                        </div>;
+                      })}
+                      <Button type="button" variant="outline" onClick={() => field("kitComponents", [...form.kitComponents, { variantId: "", quantity: 1 }])}>Adicionar peça ao kit</Button>
+                    </div>
+                  </Section>
+                ) : null}
               </div>
               <aside className="space-y-5">
                 <div className="overflow-hidden rounded-2xl border bg-muted/20">
@@ -587,6 +610,7 @@ export function ProductCatalog() {
                       <option value="made_to_order">
                         Produzido por encomenda
                       </option>
+                      <option value="kit">Kit com peças de produção</option>
                       <option value="custom_quote">
                         Orçamento personalizado
                       </option>

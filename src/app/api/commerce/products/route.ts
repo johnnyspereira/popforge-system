@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
+import type { PoolConnection } from "mysql2/promise";
 import { getSession } from "@/lib/auth/session";
 import { getAuthContext } from "@/lib/auth/service";
 import { hasMinRole } from "@/lib/auth/roles";
@@ -71,6 +72,29 @@ async function context() {
   if (!session) return null;
   return getAuthContext(session.user.id);
 }
+type KitComponent = { variantId: string; quantity: number };
+function productType(value: unknown) {
+  const type = clean(value, 30);
+  return ["ready_made", "made_to_order", "custom_quote", "kit"].includes(type) ? type : "ready_made";
+}
+function kitComponents(value: unknown): KitComponent[] {
+  if (!Array.isArray(value)) return [];
+  const components = value.map((item) => {
+    const row = item as Record<string, unknown>;
+    return { variantId: clean(row.variantId, 36), quantity: Math.max(1, Math.min(999, Math.floor(Number(row.quantity)) || 1)) };
+  }).filter((item) => item.variantId);
+  return Array.from(new Map(components.map((item) => [item.variantId, item])).values());
+}
+async function replaceKitComponents(connection: PoolConnection, accountId: string, kitVariantId: string, components: KitComponent[]) {
+  if (components.some((component) => component.variantId === kitVariantId)) throw new Error("KIT_CANNOT_CONTAIN_ITSELF");
+  if (components.length) {
+    const placeholders = components.map(() => "?").join(",");
+    const [variants] = await connection.execute<RowDataPacket[]>(`SELECT id FROM commerce_product_variants WHERE account_id=? AND id IN (${placeholders}) AND active=TRUE`, [accountId, ...components.map((component) => component.variantId)]);
+    if (variants.length !== components.length) throw new Error("KIT_COMPONENT_INVALID");
+  }
+  await connection.execute("DELETE FROM commerce_product_kit_components WHERE account_id=? AND kit_variant_id=?", [accountId, kitVariantId]);
+  for (const [index, component] of components.entries()) await connection.execute("INSERT INTO commerce_product_kit_components(id,account_id,kit_variant_id,component_variant_id,quantity,sort_order) VALUES(?,?,?,?,?,?)", [randomUUID(), accountId, kitVariantId, component.variantId, component.quantity, index]);
+}
 
 export async function GET() {
   const auth = await context();
@@ -84,7 +108,13 @@ export async function GET() {
       WHERE p.account_id=? ORDER BY p.created_at DESC`,
     [auth.account.id],
   );
-  return Response.json({ products });
+  const components = await selectRows<(RowDataPacket & { kit_variant_id: string; component_variant_id: string; quantity: number })[]>(
+    "SELECT kit_variant_id,component_variant_id,quantity FROM commerce_product_kit_components WHERE account_id=? ORDER BY sort_order,created_at",
+    [auth.account.id],
+  );
+  const byKit = new Map<string, Array<{ variantId: string; quantity: number }>>();
+  for (const component of components) byKit.set(component.kit_variant_id, [...(byKit.get(component.kit_variant_id) || []), { variantId: component.component_variant_id, quantity: Number(component.quantity) }]);
+  return Response.json({ products: products.map((product) => ({ ...product, kitComponents: byKit.get(product.variant_id) || [] })) });
 }
 
 export async function POST(request: Request) {
@@ -115,6 +145,8 @@ export async function POST(request: Request) {
     );
   const productId = randomUUID();
   const variantId = randomUUID();
+  if (productType(body?.productType) === "kit" && !kitComponents(body?.kitComponents).length)
+    return Response.json({ error: "Adicione pelo menos uma peça ao kit." }, { status: 400 });
   try {
     await transaction(async (connection) => {
       await connection.execute(
@@ -128,7 +160,7 @@ export async function POST(request: Request) {
           clean(body?.description, 5000) || null,
           clean(body?.imageUrl, 2000) || null,
           clean(body?.status, 20) === "draft" ? "draft" : "active",
-          clean(body?.productType, 30) || "ready_made",
+          productType(body?.productType),
           Boolean(body?.customizable),
           Boolean(body?.featured),
         ],
@@ -155,6 +187,7 @@ export async function POST(request: Request) {
           body?.trackStock !== false,
         ],
       );
+      if (productType(body?.productType) === "kit") await replaceKitComponents(connection, auth.account.id, variantId, kitComponents(body?.kitComponents));
     });
     return Response.json({ success: true, id: productId }, { status: 201 });
   } catch (error) {
@@ -195,7 +228,7 @@ export async function PATCH(request: Request) {
             : clean(body?.status, 20) === "archived"
               ? "archived"
               : "active",
-          clean(body?.productType, 30) || "ready_made",
+          productType(body?.productType),
           Boolean(body?.customizable),
           Boolean(body?.featured),
           id,
@@ -224,6 +257,8 @@ export async function PATCH(request: Request) {
           auth.account.id,
         ],
       );
+      if (productType(body?.productType) === "kit") await replaceKitComponents(connection, auth.account.id, variantId, kitComponents(body?.kitComponents));
+      else await connection.execute("DELETE FROM commerce_product_kit_components WHERE account_id=? AND kit_variant_id=?", [auth.account.id, variantId]);
     });
     return Response.json({ success: true });
   } catch (error) {

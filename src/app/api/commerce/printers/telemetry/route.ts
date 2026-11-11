@@ -33,11 +33,14 @@ export async function POST(request: Request) {
     if (!job) return;
     const nextJobStatus = status === 'printing' ? 'printing' : status === 'error' ? 'failed' : status === 'idle' && job.status === 'printing' ? 'post_processing' : null;
     await connection.execute("UPDATE commerce_production_jobs SET printer_file=?,printer_progress_percent=?,printer_last_seen_at=UTC_TIMESTAMP(3),status=COALESCE(?,status),started_at=CASE WHEN ?='printing' AND started_at IS NULL THEN UTC_TIMESTAMP(3) ELSE started_at END,completed_at=CASE WHEN ?='failed' THEN UTC_TIMESTAMP(3) ELSE completed_at END WHERE id=?", [currentFile, progress, nextJobStatus, nextJobStatus, nextJobStatus, job.id]);
-    const nextOrderStatus = nextJobStatus === 'printing' ? 'in_production' : nextJobStatus === 'post_processing' ? 'quality_check' : null;
-    const canUpdateOrder = nextOrderStatus && job.order_id && ((nextOrderStatus === 'in_production' && ['confirmed', 'paid', 'quality_check'].includes(job.order_status || '')) || (nextOrderStatus === 'quality_check' && job.order_status === 'in_production'));
+    // A kit can have several independent jobs. Finishing one print must never
+    // move the whole order out of production; quality starts only after the
+    // operator has completed every component in the workshop.
+    const nextOrderStatus = nextJobStatus === 'printing' ? 'in_production' : null;
+    const canUpdateOrder = nextOrderStatus && job.order_id && ['confirmed', 'paid', 'quality_check'].includes(job.order_status || '');
     if (canUpdateOrder && nextOrderStatus) {
       await connection.execute('UPDATE commerce_orders SET status=? WHERE id=?', [nextOrderStatus, job.order_id]);
-      await connection.execute('INSERT INTO commerce_order_history(id,account_id,order_id,event_type,previous_value,new_value,notes,metadata) SELECT ?,account_id,?,\'printer_telemetry\',?,?,?,? FROM commerce_orders WHERE id=?', [randomUUID(), job.order_id, job.order_status, nextOrderStatus, nextOrderStatus === 'in_production' ? 'A impressão foi iniciada automaticamente pela impressora atribuída.' : 'A impressão terminou; a encomenda segue para acabamento e controlo de qualidade.', JSON.stringify({ printer_id: printerId, current_file: currentFile, progress_percent: progress }), job.order_id]);
+      await connection.execute('INSERT INTO commerce_order_history(id,account_id,order_id,event_type,previous_value,new_value,notes,metadata) SELECT ?,account_id,?,\'printer_telemetry\',?,?,?,? FROM commerce_orders WHERE id=?', [randomUUID(), job.order_id, job.order_status, nextOrderStatus, 'A impressão foi iniciada automaticamente pela impressora atribuída.', JSON.stringify({ printer_id: printerId, current_file: currentFile, progress_percent: progress }), job.order_id]);
       if (job.order_number) updates.push({ to: job.customer_email, name: job.customer_name, orderNumber: job.order_number, value: nextOrderStatus });
     }
   });
