@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
   Heart,
@@ -36,8 +36,27 @@ export function PublicStorefront({ catalog }: { catalog: StorefrontCatalog }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
   const [cart, setCart] = useState<CartLine[]>([]);
+  const [cartHydrated, setCartHydrated] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(window.localStorage.getItem("popforge-storefront-cart") || "[]") as Array<{ variantId?: string; quantity?: number }>;
+      if (Array.isArray(saved)) {
+        const restored = saved.flatMap((line) => {
+          const product = catalog.products.find((item) => item.variants.some((variant) => variant.id === line.variantId));
+          const variant = product?.variants.find((item) => item.id === line.variantId);
+          return product && variant ? [{ product, variant, quantity: Math.max(1, Math.min(99, Math.floor(Number(line.quantity)) || 1)) }] : [];
+        });
+        setCart(restored);
+      }
+    } catch { /* An invalid local cart must never prevent the shop from loading. */ }
+    setCartHydrated(true);
+  }, [catalog.products]);
+  useEffect(() => {
+    if (!cartHydrated) return;
+    window.localStorage.setItem("popforge-storefront-cart", JSON.stringify(cart.map((line) => ({ variantId: line.variant.id, quantity: line.quantity }))));
+  }, [cart, cartHydrated]);
   const featured = catalog.products
     .filter((product) => product.featured)
     .slice(0, 4);
