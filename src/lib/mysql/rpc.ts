@@ -2636,6 +2636,11 @@ export async function executeMysqlRpc(
               pin: null,
               notes: `Pagamento ${provider}`,
             });
+          if (link.sale_id)
+            await connection.execute(
+              "UPDATE commerce_orders SET payment_status='paid',status=CASE WHEN status='pending_payment' THEN 'confirmed' ELSE status END,paid_at=COALESCE(paid_at,UTC_TIMESTAMP(3)) WHERE finance_sale_id=?",
+              [link.sale_id]
+            );
           await connection.execute(
             `UPDATE finance_payment_links SET status='paid',paid_at=UTC_TIMESTAMP(3),external_payment_intent_id=?,provider_payload=? WHERE id=?`,
             [

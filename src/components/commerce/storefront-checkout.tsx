@@ -39,11 +39,23 @@ export function StorefrontCheckout() {
     if (!preview?.available) return;
     setSubmitting(true); setMessage("");
     const form = new FormData(event.currentTarget);
-    const response = await fetch("/api/storefront/orders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items, name: form.get("name"), email: form.get("email"), phone: form.get("phone"), notes: form.get("notes"), paymentMethod: form.get("paymentMethod"), deliveryMethod, addressLine1: form.get("addressLine1"), addressLine2: form.get("addressLine2"), postalCode: form.get("postalCode"), city: form.get("city"), country: form.get("country") }) });
-    const result = await response.json().catch(() => ({})) as { error?: string; orderNumber?: number };
+    const email = String(form.get("email") || "");
+    const paymentMethod = String(form.get("paymentMethod") || "");
+    const response = await fetch("/api/storefront/orders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items, name: form.get("name"), email, phone: form.get("phone"), notes: form.get("notes"), paymentMethod, deliveryMethod, addressLine1: form.get("addressLine1"), addressLine2: form.get("addressLine2"), postalCode: form.get("postalCode"), city: form.get("city"), country: form.get("country") }) });
+    const result = await response.json().catch(() => ({})) as { error?: string; orderNumber?: number; orderId?: string };
     setSubmitting(false);
-    setMessage(response.ok ? `Pedido #${result.orderNumber} criado. Receberá as instruções de pagamento no seu e-mail.` : result.error || "Não foi possível criar a encomenda.");
-    if (response.ok) event.currentTarget.reset();
+    if (!response.ok) { setMessage(result.error || "Não foi possível criar a encomenda."); return; }
+    if (paymentMethod === "payment_link" && result.orderId) {
+      setSubmitting(true);
+      const paymentResponse = await fetch("/api/storefront/payments/stripe", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ orderId: result.orderId, email }) });
+      const payment = await paymentResponse.json().catch(() => ({})) as { checkoutUrl?: string; error?: string };
+      if (paymentResponse.ok && payment.checkoutUrl) { window.location.assign(payment.checkoutUrl); return; }
+      setSubmitting(false);
+      setMessage(`Pedido #${result.orderNumber} criado. ${payment.error || "A cobrança será enviada pela equipa POPForge."}`);
+    } else {
+      setMessage(`Pedido #${result.orderNumber} criado. Receberá as instruções de pagamento no seu e-mail.`);
+    }
+    event.currentTarget.reset();
   }
 
   const field = "mt-2 h-12 w-full border border-[#d7d1c6] bg-white px-3 font-normal outline-none transition focus:border-[#171716]";
