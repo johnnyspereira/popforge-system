@@ -1,131 +1,44 @@
 import Link from "next/link";
 import type { RowDataPacket } from "mysql2";
-import {
-  ArrowRight,
-  Boxes,
-  Calculator,
-  CircleDollarSign,
-  Factory,
-  Package,
-  ShoppingCart,
-  Store,
-  Wrench,
-} from "lucide-react";
+import { ArrowRight, Boxes, Calculator, CircleDollarSign, Factory, Package, Plus, Printer, ShoppingCart, Store, TriangleAlert, Users, Wrench } from "lucide-react";
 import { getCurrentAccount } from "@/lib/auth/account";
 import { selectRows } from "@/lib/mysql/db";
 
-type Stats = RowDataPacket & {
-  products: number;
-  orders: number;
-  production: number;
-  low_stock: number;
-  pending_requests: number;
-  monthly_sales: string | number;
-};
-const money = (value: string | number) =>
-  new Intl.NumberFormat("pt-PT", { style: "currency", currency: "EUR" }).format(
-    Number(value || 0),
-  );
+type Snapshot = RowDataPacket & { revenue: string | number; pending: number; jobs: number; stock: number; requests: number };
+type Order = RowDataPacket & { id: string; order_number: number; customer_name: string | null; customer_email: string | null; total: string | number; status: string; payment_status: string; created_at: string };
+type Job = RowDataPacket & { id: string; title: string | null; status: string; order_number: number | null; customer_name: string | null; estimated_minutes: number | null };
+type Stock = RowDataPacket & { id: string; name: string; sku: string; remaining_quantity: string | number; low_stock_threshold: string | number; unit: string };
+const money = (value: string | number) => new Intl.NumberFormat("pt-PT", { style: "currency", currency: "EUR" }).format(Number(value || 0));
+const orderStatus: Record<string, string> = { pending_payment: "A aguardar pagamento", confirmed: "Confirmada", paid: "Paga", in_production: "Em produção", quality_check: "Qualidade", ready_to_ship: "Pronta para envio", shipped: "Enviada" };
+const jobStatus: Record<string, string> = { queued: "Em fila", preparing: "A preparar", printing: "A imprimir", post_processing: "Acabamento", quality_check: "Qualidade" };
 
 export default async function CommercePage() {
   const account = await getCurrentAccount();
-  const [stats] = await selectRows<Stats[]>(
-    `SELECT
-      (SELECT COUNT(*) FROM commerce_products WHERE account_id=? AND status='active') AS products,
-      (SELECT COUNT(*) FROM commerce_orders WHERE account_id=? AND status NOT IN ('delivered','cancelled','refunded')) AS orders,
-      (SELECT COUNT(*) FROM commerce_production_jobs WHERE account_id=? AND status NOT IN ('completed','failed')) AS production,
-      (SELECT COUNT(*) FROM commerce_product_variants v JOIN commerce_products p ON p.id=v.product_id WHERE p.account_id=? AND v.track_stock=TRUE AND v.stock_quantity<=2 AND v.active=TRUE) AS low_stock,
-      (SELECT COUNT(*) FROM commerce_custom_requests WHERE account_id=? AND status IN ('new','reviewing')) AS pending_requests,
-      (SELECT COALESCE(SUM(total),0) FROM commerce_orders WHERE account_id=? AND payment_status='paid' AND created_at>=DATE_FORMAT(UTC_DATE(),'%Y-%m-01')) AS monthly_sales`,
-    Array(6).fill(account.account.id),
+  const id = account.account.id;
+  const [snapshot] = await selectRows<Snapshot[]>(
+    "SELECT (SELECT COALESCE(SUM(total),0) FROM commerce_orders WHERE account_id=? AND payment_status='paid' AND created_at>=DATE_FORMAT(UTC_DATE(),'%Y-%m-01')) AS revenue,(SELECT COUNT(*) FROM commerce_orders WHERE account_id=? AND payment_status IN ('pending','partially_paid')) AS pending,(SELECT COUNT(*) FROM commerce_production_jobs WHERE account_id=? AND status NOT IN ('completed','failed')) AS jobs,(SELECT COUNT(*) FROM commerce_inventory_items WHERE account_id=? AND active=TRUE AND remaining_quantity<=low_stock_threshold) AS stock,(SELECT COUNT(*) FROM commerce_custom_requests WHERE account_id=? AND status IN ('new','reviewing')) AS requests",
+    Array(5).fill(id),
   ).catch(() => []);
-  const data = stats || {
-    products: 0,
-    orders: 0,
-    production: 0,
-    low_stock: 0,
-    pending_requests: 0,
-    monthly_sales: 0,
-  };
-  const cards = [
-    ["Abrir oficina", "", Wrench, "/commerce/oficina"],
-    ["Produtos publicados", data.products, Package, "/commerce/produtos"],
-    ["Encomendas a tratar", data.orders, ShoppingCart, "/commerce/encomendas"],
-    ["Em produção", data.production, Factory, "/commerce/producao"],
-    ["Stock baixo", data.low_stock, Boxes, "/commerce/inventario"],
-    ["Financeiro POPForge", "", CircleDollarSign, "/commerce/financeiro"],
-  ] as const;
-  return (
-    <div className="space-y-7 p-4 sm:p-6 lg:p-8">
-      <section className="rounded-2xl border border-cyan-500/20 bg-[radial-gradient(circle_at_85%_15%,rgba(34,211,238,.15),transparent_30%),linear-gradient(135deg,#071014,#0b1c23)] p-6 text-white sm:p-8">
-        <p className="text-xs font-bold tracking-[.18em] text-cyan-300">
-          COMÉRCIO POPFORGE
-        </p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight">
-          Operação da loja
-        </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
-          Estes indicadores são calculados diretamente dos produtos, encomendas,
-          produção e pedidos recebidos pela loja.
-        </p>
-        <div className="mt-5 flex flex-wrap gap-3">
-          <Link
-            className="inline-flex h-9 items-center gap-2 rounded-lg bg-cyan-300 px-3 text-sm font-bold text-slate-950"
-            href="/commerce/produtos"
-          >
-            <Package className="size-4" /> Gerir catálogo
-          </Link>
-          <Link
-            className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/20 px-3 text-sm"
-            href="/"
-            target="_blank"
-          >
-            <Store className="size-4" /> Ver loja
-          </Link>
-          <Link
-            className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/20 px-3 text-sm"
-            href="/commerce/calculadora"
-          >
-            <Calculator className="size-4" /> Calculadora
-          </Link>
-        </div>
-      </section>
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {cards.map(([label, value, Icon, href]) => (
-          <Link
-            key={label}
-            href={href}
-            className="rounded-xl border bg-card p-5 transition hover:border-cyan-500/40 hover:bg-card-2"
-          >
-            <Icon className="size-5 text-cyan-600" />
-            <p className="mt-5 text-3xl font-bold">{value}</p>
-            <p className="mt-1 text-sm text-muted-foreground">{label}</p>
-          </Link>
-        ))}
-      </section>
-      <section className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-xl border bg-card p-6">
-          <p className="text-sm text-muted-foreground">
-            Vendas recebidas este mês
-          </p>
-          <p className="mt-2 text-3xl font-bold">{money(data.monthly_sales)}</p>
-          <p className="mt-3 text-xs text-muted-foreground">
-            Só encomendas com pagamento confirmado entram neste total.
-          </p>
-        </div>
-        <Link
-          href="/commerce/encomendas"
-          className="rounded-xl border bg-card p-6 transition hover:border-cyan-500/40"
-        >
-          <p className="text-sm text-muted-foreground">
-            Pedidos personalizados e B2B pendentes
-          </p>
-          <p className="mt-2 text-3xl font-bold">{data.pending_requests}</p>
-          <span className="mt-3 inline-flex items-center text-sm font-semibold text-cyan-600">
-            Abrir encomendas <ArrowRight className="ml-1 size-4" />
-          </span>
-        </Link>
-      </section>
-    </div>
-  );
+  const data = snapshot || { revenue: 0, pending: 0, jobs: 0, stock: 0, requests: 0 };
+  const [orders, jobs, stock] = await Promise.all([
+    selectRows<Order[]>("SELECT id,order_number,customer_name,customer_email,total,status,payment_status,created_at FROM commerce_orders WHERE account_id=? AND status NOT IN ('delivered','cancelled','refunded') ORDER BY created_at ASC LIMIT 6", [id]).catch(() => []),
+    selectRows<Job[]>("SELECT j.id,j.title,j.status,j.estimated_minutes,o.order_number,o.customer_name FROM commerce_production_jobs j LEFT JOIN commerce_orders o ON o.id=j.order_id WHERE j.account_id=? AND j.status NOT IN ('completed','failed') ORDER BY j.created_at ASC LIMIT 6", [id]).catch(() => []),
+    selectRows<Stock[]>("SELECT id,name,sku,remaining_quantity,low_stock_threshold,unit FROM commerce_inventory_items WHERE account_id=? AND active=TRUE AND remaining_quantity<=low_stock_threshold ORDER BY remaining_quantity ASC LIMIT 6", [id]).catch(() => []),
+  ]);
+  return <main className="mx-auto max-w-[1600px] space-y-6 p-4 sm:p-6 lg:p-8">
+    <section className="overflow-hidden rounded-3xl bg-[radial-gradient(circle_at_88%_0%,rgba(34,211,238,.3),transparent_30%),linear-gradient(135deg,#071218,#123841)] p-6 text-white shadow-lg sm:p-8">
+      <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end"><div><p className="text-xs font-bold tracking-[.2em] text-cyan-200">POPForge · CENTRO COMERCIAL</p><h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Tudo o que a loja precisa hoje.</h1><p className="mt-3 max-w-2xl text-sm leading-6 text-slate-200">Pedidos, clientes, produção, inventário e dinheiro na mesma operação. As filas abaixo mostram o que precisa de atenção.</p></div><div className="flex flex-wrap gap-2"><Action href="/commerce/produtos" icon={Plus} label="Novo produto" primary/><Action href="/commerce/oficina" icon={Wrench} label="Abrir oficina"/><Action href="/" icon={Store} label="Ver loja" external/></div></div>
+    </section>
+    <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><Metric label="Vendas este mês" value={money(data.revenue)} detail="pagamentos confirmados" href="/commerce/financeiro" icon={CircleDollarSign} tone="text-emerald-600"/><Metric label="A receber" value={data.pending} detail="encomendas sem pagamento" href="/commerce/encomendas" icon={ShoppingCart} tone="text-amber-600"/><Metric label="Produção ativa" value={data.jobs} detail="trabalhos na oficina" href="/commerce/producao" icon={Factory} tone="text-cyan-600"/><Metric label="Stock crítico" value={data.stock} detail="materiais a repor" href="/commerce/inventario" icon={TriangleAlert} tone="text-rose-600"/></section>
+    <section className="grid gap-5 xl:grid-cols-[minmax(0,1.3fr)_minmax(340px,.7fr)]">
+      <Panel title="Fila de encomendas" icon={ShoppingCart} href="/commerce/encomendas" action="Gerir pedidos">{orders.length ? <div className="divide-y">{orders.map((order) => <Link key={order.id} href="/commerce/encomendas" className="flex items-center gap-4 py-4 first:pt-0 last:pb-0 hover:bg-muted/30"><span className="grid size-10 shrink-0 place-items-center rounded-xl bg-cyan-500/10 text-xs font-bold text-cyan-700">#{order.order_number}</span><span className="min-w-0 flex-1"><b className="block truncate">{order.customer_name || order.customer_email || "Cliente"}</b><small className="block text-muted-foreground">{orderStatus[order.status] || order.status}</small></span><span className="text-right"><b className="block">{money(order.total)}</b><small className={order.payment_status === "paid" ? "text-emerald-600" : "text-amber-600"}>{order.payment_status === "paid" ? "Pago" : "Pendente"}</small></span></Link>)}</div> : <Empty icon={ShoppingCart} text="Ainda não existem encomendas em aberto." href="/commerce/produtos" label="Criar produto"/>}</Panel>
+      <div className="space-y-5"><Panel title="Ação rápida" icon={Plus}><div className="grid gap-2"><Quick href="/commerce/produtos" icon={Package} title="Adicionar produto" text="Publicar peça ou kit na loja."/><Quick href="/commerce/calculadora" icon={Calculator} title="Calcular preço" text="Margem para peça ou encomenda."/><Quick href="/commerce/orcamentos" icon={Users} title="Orçamentos" text="Pedidos B2B e peças à medida."/><Quick href="/commerce/impressoras" icon={Printer} title="Impressoras" text="Máquinas e produção em curso."/></div></Panel><Panel title="Pedidos personalizados" icon={Users} href="/commerce/orcamentos" action="Abrir pedidos"><p className="text-3xl font-bold">{data.requests}</p><p className="mt-1 text-sm text-muted-foreground">novos ou em análise</p></Panel></div>
+    </section>
+    <section className="grid gap-5 xl:grid-cols-2"><Panel title="Produção em curso" icon={Factory} href="/commerce/producao" action="Ver produção">{jobs.length ? <div className="divide-y">{jobs.map((job) => <Link key={job.id} href="/commerce/producao" className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0"><span className="min-w-0"><b className="block truncate">{job.title || "Peça de produção"}</b><small className="block text-muted-foreground">{job.order_number ? "Pedido #" + job.order_number : "Sem pedido"}{job.customer_name ? " · " + job.customer_name : ""}</small></span><span className="text-right text-sm font-semibold text-cyan-700">{jobStatus[job.status] || job.status}</span></Link>)}</div> : <Empty icon={Factory} text="Não há produção pendente." href="/commerce/produtos" label="Criar produto"/>}</Panel><Panel title="Stock a repor" icon={Boxes} href="/commerce/inventario" action="Gerir inventário">{stock.length ? <div className="divide-y">{stock.map((item) => <Link key={item.id} href="/commerce/inventario" className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0"><span><b className="block">{item.name}</b><small className="block text-muted-foreground">{item.sku}</small></span><span className="text-right"><b className="block text-rose-600">{Number(item.remaining_quantity)} {item.unit}</b><small className="block text-muted-foreground">mínimo {Number(item.low_stock_threshold)}</small></span></Link>)}</div> : <Empty icon={Boxes} text="Não há materiais abaixo do mínimo." href="/commerce/inventario" label="Abrir inventário"/>}</Panel></section>
+  </main>;
 }
+function Metric({ label, value, detail, href, icon: Icon, tone }: { label: string; value: string | number; detail: string; href: string; icon: typeof Package; tone: string }) { return <Link href={href} className="rounded-2xl border bg-card p-5 transition hover:-translate-y-0.5 hover:border-cyan-500/50 hover:shadow-md"><Icon className={"size-5 " + tone}/><p className="mt-5 text-3xl font-bold tracking-tight">{value}</p><p className="mt-1 text-sm font-medium">{label}</p><p className="mt-1 text-xs text-muted-foreground">{detail}</p></Link>; }
+function Panel({ title, icon: Icon, href, action, children }: { title: string; icon: typeof Package; href?: string; action?: string; children: React.ReactNode }) { return <section className="rounded-2xl border bg-card p-5 shadow-sm"><header className="mb-5 flex items-center justify-between gap-4"><h2 className="flex items-center gap-2 font-bold"><Icon className="size-5 text-cyan-600"/>{title}</h2>{href && <Link href={href} className="inline-flex items-center text-xs font-bold text-cyan-700">{action}<ArrowRight className="ml-1 size-3.5"/></Link>}</header>{children}</section>; }
+function Action({ href, icon: Icon, label, primary, external }: { href: string; icon: typeof Plus; label: string; primary?: boolean; external?: boolean }) { return <Link href={href} target={external ? "_blank" : undefined} className={primary ? "inline-flex h-10 items-center gap-2 rounded-xl bg-cyan-300 px-4 text-sm font-bold text-slate-950" : "inline-flex h-10 items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 text-sm font-bold"}><Icon className="size-4"/>{label}</Link>; }
+function Quick({ href, icon: Icon, title, text }: { href: string; icon: typeof Package; title: string; text: string }) { return <Link href={href} className="flex items-center gap-3 rounded-xl border p-3 transition hover:border-cyan-500/50"><span className="rounded-lg bg-cyan-500/10 p-2 text-cyan-700"><Icon className="size-4"/></span><span><b className="block text-sm">{title}</b><small className="block text-xs text-muted-foreground">{text}</small></span><ArrowRight className="ml-auto size-4 text-muted-foreground"/></Link>; }
+function Empty({ icon: Icon, text, href, label }: { icon: typeof Package; text: string; href: string; label: string }) { return <div className="grid min-h-40 place-items-center rounded-xl border border-dashed p-6 text-center"><div><Icon className="mx-auto size-7 text-muted-foreground"/><p className="mt-3 text-sm text-muted-foreground">{text}</p><Link href={href} className="mt-3 inline-flex text-sm font-bold text-cyan-700">{label}<ArrowRight className="ml-1 size-4"/></Link></div></div>; }
