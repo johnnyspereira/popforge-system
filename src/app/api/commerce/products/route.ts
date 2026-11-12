@@ -52,6 +52,13 @@ function friendlyError(error: unknown) {
       ? String(error.code)
       : "";
   const message = error instanceof Error ? error.message : "";
+  const normalized = message.toLowerCase();
+  if (code === "ER_NO_SUCH_TABLE" || normalized.includes("commerce_product_kit_components")) {
+    return { message: "A base de dados ainda não tem a migração de KIT. Atualize o runtime do cPanel e reinicie a aplicação antes de criar kits.", status: 503 };
+  }
+  if (code === "ER_BAD_FIELD_ERROR" || normalized.includes("data truncated") || normalized.includes("incorrect value")) {
+    return { message: "A estrutura de produtos está desatualizada para este tipo de produto. Execute as migrações do POPForge e tente novamente.", status: 503 };
+  }
   if (code === "ER_DUP_ENTRY" || message.includes("Duplicate entry")) {
     if (message.includes("commerce_variants_sku_unique"))
       return {
