@@ -120,11 +120,7 @@ export function WebsiteBuilder() {
   useEffect(() => {
     if (!accountId) return;
     Promise.all([
-      db
-        .from('public_site_settings')
-        .select('*')
-        .eq('account_id', accountId)
-        .maybeSingle(),
+      fetch('/api/website/settings', { cache: 'no-store' }).then(async (response) => ({ data: (await response.json()).settings, error: response.ok ? null : new Error('Não foi possível carregar as configurações do site.') })),
       db
         .from('public_site_leads')
         .select('*')
@@ -195,6 +191,8 @@ export function WebsiteBuilder() {
     if (!form.hero_title.trim())
       return toast.error('Informe o título principal.');
     setSaving(true);
+    const apiResponse = await fetch('/api/website/settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, account_id: accountId, slug, hero_title: form.hero_title.trim(), about_title: form.about_title.trim() || 'Sobre nós' }) });
+    if (apiResponse.ok) { setSaving(false); patch('slug', slug); toast.success('Site público atualizado.'); return; }
     const { error } = await db.from('public_site_settings').upsert({
       ...form,
       account_id: accountId,
