@@ -23,6 +23,7 @@
     "commerce": "Store and production",
     "workshop": "3D workshop",
     "catalog": "Catalog",
+    "collections": "Collections",
     "orders": "Orders",
     "inventory": "Stock and materials",
     "printers": "Printers",

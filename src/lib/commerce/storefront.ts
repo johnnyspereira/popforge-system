@@ -73,7 +73,7 @@ export async function loadStorefrontCatalog(accountId: string): Promise<Storefro
     ),
     selectRows<CategoryRow[]>(
       `SELECT c.slug,c.name,c.description,
-              (SELECT p.image_url FROM commerce_products p WHERE p.category_id=c.id AND p.status='active' ORDER BY p.featured DESC,p.created_at DESC LIMIT 1) AS image_url
+              c.image_url AS image_url
          FROM commerce_categories c WHERE c.account_id=? AND c.active=TRUE ORDER BY c.sort_order,c.name`,
       [accountId],
     ),
