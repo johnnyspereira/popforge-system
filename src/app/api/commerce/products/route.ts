@@ -108,10 +108,13 @@ export async function GET() {
       WHERE p.account_id=? ORDER BY p.created_at DESC`,
     [auth.account.id],
   );
+  // Deployments can briefly run before the kit migration is applied. Product
+  // management remains available in that interval; components appear once
+  // MySQL has applied migration 064 on the next application start.
   const components = await selectRows<(RowDataPacket & { kit_variant_id: string; component_variant_id: string; quantity: number })[]>(
     "SELECT kit_variant_id,component_variant_id,quantity FROM commerce_product_kit_components WHERE account_id=? ORDER BY sort_order,created_at",
     [auth.account.id],
-  );
+  ).catch(() => []);
   const byKit = new Map<string, Array<{ variantId: string; quantity: number }>>();
   for (const component of components) byKit.set(component.kit_variant_id, [...(byKit.get(component.kit_variant_id) || []), { variantId: component.component_variant_id, quantity: Number(component.quantity) }]);
   return Response.json({ products: products.map((product) => ({ ...product, kitComponents: byKit.get(product.variant_id) || [] })) });
