@@ -70,7 +70,11 @@ const topbarGroupConfigs = [
   {
     labelKey: 'groupOperation',
     description: 'O que a equipa precisa de tratar agora.',
-    sections: [{ label: 'Hoje', hrefs: ['/tasks', '/notifications'] }],
+    sections: [
+      { label: 'Hoje', hrefs: ['/tasks', '/notifications'] },
+      { label: 'Loja e produção', hrefs: ['/commerce/oficina', '/commerce/produtos', '/commerce/encomendas', '/commerce/inventario', '/commerce/impressoras'] },
+      { label: 'Resultados', hrefs: ['/commerce/financeiro', '/commerce/relatorios'] },
+    ],
   },
   {
     labelKey: 'groupCommercial',

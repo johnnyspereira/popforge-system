@@ -13,8 +13,8 @@ import { cn } from '@/lib/utils';
 const MOBILE_PRIMARY_HREFS = [
   '/dashboard',
   '/inbox',
-  '/commerce',
-  '/contacts',
+  '/commerce/encomendas',
+  '/commerce/oficina',
 ] as const;
 
 /**
