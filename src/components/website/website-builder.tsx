@@ -130,8 +130,7 @@ export function WebsiteBuilder() {
     ]).then(([siteResult, leadResult]) => {
       if (siteResult.error) {
         setSchemaMissing(
-          siteResult.error.code === '42P01' ||
-            siteResult.error.message.includes('schema cache')
+          siteResult.error.message.includes('schema cache')
         );
       } else if (siteResult.data) setForm({ ...DEFAULTS, ...siteResult.data });
       else
