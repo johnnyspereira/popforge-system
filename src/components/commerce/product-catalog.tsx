@@ -256,7 +256,12 @@ export function ProductCatalog() {
   }
   async function importFromUrl(event: React.FormEvent) {
     event.preventDefault(); setImporting(true); setError("");
-    const response = await fetch("/api/commerce/products/import-url", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: importUrl }) });
+    let response: Response;
+    try {
+      response = await fetch("/api/commerce/products/import-url", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: importUrl }), signal: AbortSignal.timeout(20000) });
+    } catch {
+      setImporting(false); setError("O servidor não respondeu ao importador. Atualize o runtime do cPanel e tente novamente."); return;
+    }
     const result = await response.json().catch(() => ({})) as { error?: string; warning?: string; data?: { name?: string; description?: string; imageUrl?: string } };
     setImporting(false);
     if (!response.ok || !result.data) { setError(result.error || "Não foi possível importar este link."); return; }
