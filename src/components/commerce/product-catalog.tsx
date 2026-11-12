@@ -500,6 +500,7 @@ export function ProductCatalog() {
         <div className="fixed inset-0 z-[80] overflow-y-auto bg-slate-950/75 p-3 backdrop-blur-sm sm:p-6">
           <form
             onSubmit={save}
+            onPaste={(event) => { const file = Array.from(event.clipboardData.files).find((item) => item.type.startsWith("image/")); if (file) { event.preventDefault(); void uploadImage(file); } }}
             className="mx-auto my-4 max-w-6xl overflow-hidden rounded-3xl border bg-background shadow-2xl"
           >
             <header className="flex items-center justify-between border-b px-5 py-4 sm:px-7">
