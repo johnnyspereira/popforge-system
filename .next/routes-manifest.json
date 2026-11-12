@@ -914,6 +914,12 @@
       "namedRegex": "^/api/commerce/catalog/import\\-lovable(?:/)?$"
     },
     {
+      "page": "/api/commerce/categories",
+      "regex": "^/api/commerce/categories(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/commerce/categories(?:/)?$"
+    },
+    {
       "page": "/api/commerce/finance",
       "regex": "^/api/commerce/finance(?:/)?$",
       "routeKeys": {},
@@ -1482,6 +1488,12 @@
       "regex": "^/commerce/calculadora(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/commerce/calculadora(?:/)?$"
+    },
+    {
+      "page": "/commerce/colecoes",
+      "regex": "^/commerce/colecoes(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/commerce/colecoes(?:/)?$"
     },
     {
       "page": "/commerce/encomendas",
