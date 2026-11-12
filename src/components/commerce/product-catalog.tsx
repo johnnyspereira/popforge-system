@@ -99,6 +99,9 @@ export function ProductCatalog() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(empty);
   const [selected, setSelected] = useState<string[]>([]);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importUrl, setImportUrl] = useState("");
+  const [importing, setImporting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -247,6 +250,15 @@ export function ProductCatalog() {
     if (!response.ok) { setError("Não foi possível arquivar os produtos selecionados."); return; }
     await load();
   }
+  async function importFromUrl(event: React.FormEvent) {
+    event.preventDefault(); setImporting(true); setError("");
+    const response = await fetch("/api/commerce/products/import-url", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: importUrl }) });
+    const result = await response.json().catch(() => ({})) as { error?: string; data?: { name?: string; description?: string; imageUrl?: string } };
+    setImporting(false);
+    if (!response.ok || !result.data) { setError(result.error || "Não foi possível importar este link."); return; }
+    setForm((current) => ({ ...current, name: result.data?.name || current.name, description: result.data?.description || current.description, imageUrl: result.data?.imageUrl || current.imageUrl }));
+    setImportOpen(false); setImportUrl(""); setOpen(true);
+  }
 
   return (
     <div className="space-y-6 p-4 sm:p-6 lg:p-8">
@@ -265,6 +277,7 @@ export function ProductCatalog() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => setImportOpen(true)}><ExternalLink className="size-4"/> Importar por link</Button>
             <Link href="/commerce/encomendas" className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/20 bg-white/5 px-3 text-sm font-medium hover:bg-white/10">
               Gerir encomendas
             </Link>
@@ -285,6 +298,7 @@ export function ProductCatalog() {
           </div>
         </div>
       </section>
+      {importOpen ? <div className="fixed inset-0 z-[90] grid place-items-center bg-slate-950/70 p-4"><form onSubmit={importFromUrl} className="w-full max-w-xl space-y-5 rounded-2xl border bg-background p-6 shadow-2xl"><div className="flex items-start justify-between"><div><p className="text-xs font-bold tracking-wider text-cyan-600 uppercase">Importação assistida</p><h2 className="mt-1 text-xl font-bold">Importar produto por link</h2><p className="mt-2 text-sm text-muted-foreground">Cole um link público. Vamos trazer título, descrição e imagem para rever antes de criar.</p></div><Button type="button" variant="ghost" size="icon" onClick={() => setImportOpen(false)}><X/></Button></div><Input autoFocus type="url" required value={importUrl} onChange={(event) => setImportUrl(event.target.value)} placeholder="https://makerworld.com/pt/models/..."/><p className="text-xs text-muted-foreground">Os ficheiros do site original não são copiados automaticamente. Verifique direitos de uso, preço, SKU e produção antes de publicar.</p><div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => setImportOpen(false)}>Cancelar</Button><Button disabled={importing}>{importing ? "A ler link…" : "Ler e preencher"}</Button></div></form></div> : null}
       <section className="grid gap-3 md:grid-cols-3">
         <FlowCard step="1" title="Prepare a peça" text="Defina preço, custo, stock e dados de produção." />
         <FlowCard step="2" title="Publique na loja" text="Produtos publicados ficam disponíveis para o cliente comprar." />
