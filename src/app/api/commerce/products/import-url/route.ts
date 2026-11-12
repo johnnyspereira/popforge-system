@@ -12,6 +12,7 @@ export async function POST(request: Request) {
   const session = await getSession();
   if (!session) return Response.json({ error: 'Sessão inválida.' }, { status: 401 });
   const auth = await getAuthContext(session.user.id);
+  if (!auth) return Response.json({ error: 'Conta inválida.' }, { status: 401 });
   if (!hasMinRole(auth.profile.account_role, 'agent')) return Response.json({ error: 'Sem permissão para importar produtos.' }, { status: 403 });
   const body = await request.json().catch(() => null) as { url?: string } | null;
   let url: URL;
