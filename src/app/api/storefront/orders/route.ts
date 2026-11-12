@@ -79,18 +79,24 @@ export async function POST(request: Request) {
       await createProductionPlan(connection, { accountId, orderId, actorUserId: owners[0].owner_user_id });
       return { orderNumber: order.insertId, orderId, saleId, accountId, customerName: name };
     });
-    await notifyAccountEvent({
-      accountId: result.accountId,
-      type: "commerce_order_created",
-      category: "sales",
-      priority: "high",
-      title: `Nova encomenda #${result.orderNumber}`,
-      body: `${result.customerName} criou uma encomenda na loja online.`,
-      actionUrl: `/commerce/encomendas?id=${result.orderId}`,
-      dedupeKey: `commerce-order-created:${result.orderId}`,
-      metadata: { orderId: result.orderId, orderNumber: result.orderNumber },
-      whatsappText: `Nova encomenda #${result.orderNumber} recebida na loja online.`,
-    });
+    try {
+      await notifyAccountEvent({
+        accountId: result.accountId,
+        type: "commerce_order_created",
+        category: "sales",
+        priority: "high",
+        title: `Nova encomenda #${result.orderNumber}`,
+        body: `${result.customerName} criou uma encomenda na loja online.`,
+        actionUrl: `/commerce/encomendas?id=${result.orderId}`,
+        dedupeKey: `commerce-order-created:${result.orderId}`,
+        metadata: { orderId: result.orderId, orderNumber: result.orderNumber },
+        whatsappText: `Nova encomenda #${result.orderNumber} recebida na loja online.`,
+      });
+    } catch (notificationError) {
+      // Notifications are an after-commit side effect. Never report a failed
+      // checkout after the order has already been safely stored.
+      console.error("[storefront-order-notification]", notificationError);
+    }
     const { accountId: _accountId, customerName: _customerName, ...publicResult } = result;
     return Response.json({ success: true, ...publicResult }, { status: 201 });
   } catch (error) {
