@@ -98,6 +98,7 @@ export function ProductCatalog() {
   const [filter, setFilter] = useState("all");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(empty);
+  const [selected, setSelected] = useState<string[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -112,6 +113,7 @@ export function ProductCatalog() {
     if (!response.ok)
       setError(result.error || "Não foi possível carregar o catálogo.");
     setProducts(result.products || []);
+    setSelected([]);
     setLoading(false);
   }, []);
   useEffect(() => {
@@ -239,6 +241,12 @@ export function ProductCatalog() {
     });
     await load();
   }
+  async function archiveSelected() {
+    if (!selected.length || !window.confirm(`Arquivar ${selected.length} produtos selecionados? Deixarão de aparecer na loja.`)) return;
+    const response = await fetch(`/api/commerce/products?ids=${encodeURIComponent(selected.join(","))}`, { method: "DELETE" });
+    if (!response.ok) { setError("Não foi possível arquivar os produtos selecionados."); return; }
+    await load();
+  }
 
   return (
     <div className="space-y-6 p-4 sm:p-6 lg:p-8">
@@ -331,6 +339,7 @@ export function ProductCatalog() {
               ))}
             </div>
           </div>
+          {selected.length ? <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900"><span><b>{selected.length}</b> produto(s) selecionado(s)</span><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => setSelected([])}>Limpar seleção</Button><Button size="sm" variant="destructive" onClick={() => void archiveSelected()}><Archive className="size-4"/> Arquivar selecionados</Button></div></div> : null}
         </CardContent>
       </Card>
       {error && !open ? (
@@ -360,12 +369,13 @@ export function ProductCatalog() {
             </div>
           ) : (
             <div className="divide-y">
+              <div className="flex items-center gap-3 border-b bg-muted/20 px-4 py-3 text-sm"><input type="checkbox" aria-label="Selecionar todos os produtos visíveis" checked={visible.length > 0 && visible.every((product) => selected.includes(product.id))} onChange={(event) => setSelected(event.target.checked ? Array.from(new Set([...selected, ...visible.map((product) => product.id)])) : selected.filter((id) => !visible.some((product) => product.id === id)))} /><span>Selecionar produtos visíveis</span></div>
               {visible.map((product) => (
                 <div
                   key={product.variant_id}
                   className="grid gap-4 p-4 transition hover:bg-muted/30 sm:grid-cols-[72px_minmax(0,1fr)_120px_110px_120px] sm:items-center"
                 >
-                  <ProductImage url={product.image_url} name={product.name} />
+                  <div className="flex items-center gap-3"><input type="checkbox" aria-label={`Selecionar ${product.name}`} checked={selected.includes(product.id)} onChange={(event) => setSelected(event.target.checked ? [...selected, product.id] : selected.filter((id) => id !== product.id))} /><ProductImage url={product.image_url} name={product.name} /></div>
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="truncate font-semibold">{product.name}</p>

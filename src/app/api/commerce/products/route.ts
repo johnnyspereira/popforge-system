@@ -279,14 +279,13 @@ export async function DELETE(request: Request) {
     return Response.json({ error: "Sessão inválida." }, { status: 401 });
   if (!hasMinRole(auth.profile.account_role, "agent"))
     return Response.json({ error: "Sem permissão para arquivar produtos." }, { status: 403 });
-  const id = new URL(request.url).searchParams.get("id");
-  if (!id)
+  const url = new URL(request.url);
+  const ids = Array.from(new Set([...(url.searchParams.getAll("id")), ...(url.searchParams.get("ids") || "").split(",")].map((value) => clean(value, 36)).filter(Boolean))).slice(0, 200);
+  if (!ids.length)
     return Response.json({ error: "Produto inválido." }, { status: 400 });
   await transaction(async (connection) => {
-    await connection.execute(
-      `UPDATE commerce_products SET status='archived' WHERE id=? AND account_id=?`,
-      [id, auth.account.id],
-    );
+    const placeholders = ids.map(() => "?").join(",");
+    await connection.execute(`UPDATE commerce_products SET status='archived' WHERE id IN (${placeholders}) AND account_id=?`, [...ids, auth.account.id]);
   });
-  return Response.json({ success: true });
+  return Response.json({ success: true, archived: ids.length });
 }
