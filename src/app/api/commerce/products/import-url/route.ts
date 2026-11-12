@@ -19,6 +19,15 @@ export async function POST(request: Request) {
   try { url = new URL(String(body?.url || '').trim()); } catch { return Response.json({ error: 'Indique um URL válido.' }, { status: 400 }); }
   if (!['http:', 'https:'].includes(url.protocol)) return Response.json({ error: 'O URL deve começar por http:// ou https://.' }, { status: 400 });
   try {
+    const makerId = url.hostname.endsWith('makerworld.com') ? url.pathname.match(/\/models\/(\d+)/)?.[1] : null;
+    if (makerId) {
+      const api = await fetch(`https://makerworld.com/api/v1/design-service/design/${makerId}`, { headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(12000) });
+      if (api.ok) {
+        const model = await api.json() as { title?: string; summary?: string; coverUrl?: string; tags?: string[] };
+        const description = text(String(model.summary || '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' '), 5000);
+        return Response.json({ success: true, sourceUrl: url.toString(), data: { name: text(model.title || '', 180), description, imageUrl: model.coverUrl || '', sourceReference: url.toString(), tags: model.tags || [] } });
+      }
+    }
     const response = await fetch(url, { headers: { 'User-Agent': 'POPForge-Catalog-Importer/1.0' }, signal: AbortSignal.timeout(12000), redirect: 'follow' });
     if (!response.ok) throw new Error(`HTTP_${response.status}`);
     const html = (await response.text()).slice(0, 2_000_000);
