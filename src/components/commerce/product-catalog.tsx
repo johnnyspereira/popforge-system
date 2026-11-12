@@ -538,7 +538,7 @@ export function ProductCatalog() {
                     />
                   </Field>
                   <Field label="Fotografia do produto">
-                    <label className="text-muted-foreground hover:border-cyan-500 hover:text-foreground flex cursor-pointer items-center justify-center rounded-xl border border-dashed p-4 text-sm">
+                    <label onPaste={(event) => { const file = Array.from(event.clipboardData.files).find((item) => item.type.startsWith("image/")); if (file) { event.preventDefault(); void uploadImage(file); } }} tabIndex={0} className="text-muted-foreground hover:border-cyan-500 hover:text-foreground flex cursor-pointer items-center justify-center rounded-xl border border-dashed p-4 text-sm">
                       <input
                         type="file"
                         accept="image/*"
