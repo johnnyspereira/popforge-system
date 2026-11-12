@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import Link from "next/link";
 
 type Product = {
   id: string;
@@ -255,7 +256,10 @@ export function ProductCatalog() {
               na loja sem sair do painel.
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Link href="/commerce/encomendas" className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/20 bg-white/5 px-3 text-sm font-medium hover:bg-white/10">
+              Gerir encomendas
+            </Link>
             <a
               href="/"
               target="_blank"
@@ -272,6 +276,11 @@ export function ProductCatalog() {
             </Button>
           </div>
         </div>
+      </section>
+      <section className="grid gap-3 md:grid-cols-3">
+        <FlowCard step="1" title="Prepare a peça" text="Defina preço, custo, stock e dados de produção." />
+        <FlowCard step="2" title="Publique na loja" text="Produtos publicados ficam disponíveis para o cliente comprar." />
+        <FlowCard step="3" title="Acompanhe a encomenda" text="Use Encomendas para confirmar pagamento, produção e envio." />
       </section>
       <section className="grid gap-4 sm:grid-cols-3">
         <Metric
@@ -660,6 +669,10 @@ export function ProductCatalog() {
       ) : null}
     </div>
   );
+}
+
+function FlowCard({ step, title, text }: { step: string; title: string; text: string }) {
+  return <div className="rounded-xl border bg-card p-4"><span className="grid size-7 place-items-center rounded-full bg-cyan-500/10 text-sm font-bold text-cyan-700">{step}</span><p className="mt-3 font-semibold">{title}</p><p className="mt-1 text-sm text-muted-foreground">{text}</p></div>;
 }
 
 function Metric({
