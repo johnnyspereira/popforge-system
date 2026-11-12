@@ -263,7 +263,10 @@ export function ProductCatalog() {
       if (fallbackName) {
         setForm((current) => ({ ...current, name: fallbackName.slice(0, 180), sku: current.sku || automaticSku(fallbackName), description: current.description || `Referência importada de ${parsed.hostname}.`, sourceReference: parsed.toString() }));
         setImporting(false); setImportOpen(false); setImportUrl(""); setOpen(true);
-        // The form is available immediately; server enrichment is optional.
+        void fetch("/api/commerce/products/import-url", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: parsed.toString() }), signal: AbortSignal.timeout(20000) }).then(async (response) => {
+          const result = await response.json().catch(() => ({})) as { data?: { name?: string; description?: string; imageUrl?: string } };
+          if (response.ok && result.data) setForm((current) => ({ ...current, name: result.data?.name || current.name, description: result.data?.description || current.description, imageUrl: result.data?.imageUrl || current.imageUrl }));
+        }).catch(() => undefined);
         return;
       }
     } catch { /* let the API return the validation message */ }
