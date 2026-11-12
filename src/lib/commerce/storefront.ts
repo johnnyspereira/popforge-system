@@ -56,7 +56,7 @@ export async function resolveStorefrontAccount(host?: string) {
 }
 
 export async function loadStorefrontCatalog(accountId: string): Promise<StorefrontCatalog> {
-  const [rows, categories] = await Promise.all([
+  const rows = await selectRows<ProductRow[]>(
     selectRows<ProductRow[]>(
       `SELECT p.id,p.slug,p.name,p.description,p.image_url,p.dimensions,p.badge,p.product_type,p.customizable,p.featured,
               c.slug AS category_slug,c.name AS category_name,
@@ -70,14 +70,19 @@ export async function loadStorefrontCatalog(accountId: string): Promise<Storefro
           AND (v.track_stock=FALSE OR v.stock_quantity>0)
         ORDER BY p.featured DESC,p.created_at DESC,m.sort_order ASC`,
       [accountId],
-    ),
-    selectRows<CategoryRow[]>(
+    );
+  let categories: CategoryRow[];
+  try { categories = await selectRows<CategoryRow[]>(
       `SELECT c.slug,c.name,c.description,
               c.image_url AS image_url
          FROM commerce_categories c WHERE c.account_id=? AND c.active=TRUE ORDER BY c.sort_order,c.name`,
       [accountId],
-    ),
-  ]);
+    ); } catch {
+    categories = await selectRows<CategoryRow[]>(
+      `SELECT c.slug,c.name,c.description,
+              (SELECT p.image_url FROM commerce_products p WHERE p.category_id=c.id AND p.status='active' ORDER BY p.featured DESC,p.created_at DESC LIMIT 1) AS image_url
+         FROM commerce_categories c WHERE c.account_id=? AND c.active=TRUE ORDER BY c.sort_order,c.name`, [accountId]);
+  }
   const products = new Map<string, StorefrontProduct>();
   for (const row of rows) {
     let product = products.get(row.id);
