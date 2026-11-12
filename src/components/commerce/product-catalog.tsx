@@ -452,7 +452,7 @@ export function ProductCatalog() {
         <div className="fixed inset-0 z-[80] overflow-y-auto bg-slate-950/75 p-3 backdrop-blur-sm sm:p-6">
           <form
             onSubmit={save}
-            className="mx-auto my-4 max-w-5xl overflow-hidden rounded-3xl border bg-background shadow-2xl"
+            className="mx-auto my-4 max-w-6xl overflow-hidden rounded-3xl border bg-background shadow-2xl"
           >
             <header className="flex items-center justify-between border-b px-5 py-4 sm:px-7">
               <div>
@@ -472,7 +472,7 @@ export function ProductCatalog() {
                 <X />
               </Button>
             </header>
-            <div className="grid gap-7 p-5 sm:p-7 lg:grid-cols-[1fr_300px]">
+            <div className="grid min-w-0 gap-7 p-5 sm:p-7 lg:grid-cols-[minmax(0,1fr)] xl:grid-cols-[minmax(0,1fr)_300px]">
               <div className="space-y-6">
                 <Section title="Informação principal">
                   <Field label="Nome do produto" required>
