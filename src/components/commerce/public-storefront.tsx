@@ -39,6 +39,7 @@ export function PublicStorefront({ catalog }: { catalog: StorefrontCatalog }) {
   const [cartHydrated, setCartHydrated] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [heroIndex, setHeroIndex] = useState(0);
   useEffect(() => {
     try {
       const saved = JSON.parse(window.localStorage.getItem("popforge-storefront-cart") || "[]") as Array<{ variantId?: string; quantity?: number }>;
@@ -59,8 +60,14 @@ export function PublicStorefront({ catalog }: { catalog: StorefrontCatalog }) {
   }, [cart, cartHydrated]);
   const featured = catalog.products
     .filter((product) => product.featured)
-    .slice(0, 4);
-  const hero = featured[0] || catalog.products[0];
+    .slice(0, 6);
+  const heroSlides = featured.length ? featured : catalog.products.slice(0, 1);
+  const hero = heroSlides[heroIndex % Math.max(1, heroSlides.length)];
+  useEffect(() => {
+    if (heroSlides.length < 2) return;
+    const timer = window.setInterval(() => setHeroIndex((index) => (index + 1) % heroSlides.length), 6000);
+    return () => window.clearInterval(timer);
+  }, [heroSlides.length]);
   const visible = useMemo(
     () =>
       catalog.products.filter(
@@ -251,6 +258,7 @@ export function PublicStorefront({ catalog }: { catalog: StorefrontCatalog }) {
                 </div>
                 {hero && <b>{money(priceOf(hero))}</b>}
               </div>
+              {heroSlides.length > 1 && <div className="absolute right-8 bottom-24 z-10 flex items-center gap-1.5"><button type="button" aria-label="Slide anterior" onClick={() => setHeroIndex((index) => (index - 1 + heroSlides.length) % heroSlides.length)} className="grid size-8 place-items-center rounded-full bg-white/90 text-sm shadow">‹</button>{heroSlides.map((slide, index) => <button type="button" key={slide.id} aria-label={`Mostrar ${slide.name}`} onClick={() => setHeroIndex(index)} className={`h-1.5 rounded-full transition-all ${index === heroIndex % heroSlides.length ? "w-7 bg-[#e6532f]" : "w-1.5 bg-white/80"}`} />)}<button type="button" aria-label="Próximo slide" onClick={() => setHeroIndex((index) => (index + 1) % heroSlides.length)} className="grid size-8 place-items-center rounded-full bg-white/90 text-sm shadow">›</button></div>}
             </div>
           </div>
         </section>
