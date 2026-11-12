@@ -141,6 +141,10 @@ export function WebsiteBuilder() {
         });
       if (!leadResult.error) setLeads((leadResult.data ?? []) as Lead[]);
       setLoading(false);
+    }).catch((error) => {
+      console.error('[website builder load]', error);
+      setLoading(false);
+      toast.error('Não foi possível carregar o editor do site.');
     });
   }, [account?.name, accountId, db]);
   useEffect(() => {
@@ -183,7 +187,8 @@ export function WebsiteBuilder() {
     }
   }
   async function save() {
-    if (!accountId || !canEditSettings) return;
+    if (!accountId) return toast.error('A sessão expirou. Entre novamente.');
+    if (!canEditSettings) return toast.error('Apenas administradores podem publicar alterações no site.');
     const slug = slugify(form.slug);
     if (slug.length < 3)
       return toast.error('Escolha um endereço com pelo menos 3 caracteres.');
