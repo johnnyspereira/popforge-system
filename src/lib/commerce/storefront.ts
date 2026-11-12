@@ -57,7 +57,6 @@ export async function resolveStorefrontAccount(host?: string) {
 
 export async function loadStorefrontCatalog(accountId: string): Promise<StorefrontCatalog> {
   const rows = await selectRows<ProductRow[]>(
-    selectRows<ProductRow[]>(
       `SELECT p.id,p.slug,p.name,p.description,p.image_url,p.dimensions,p.badge,p.product_type,p.customizable,p.featured,
               c.slug AS category_slug,c.name AS category_name,
               v.id AS variant_id,v.sku,v.name AS variant_name,v.material,v.color,v.size_label,v.price,v.compare_at_price,v.stock_quantity,v.track_stock,
