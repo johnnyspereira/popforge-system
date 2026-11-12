@@ -36,7 +36,6 @@ const legacyClinicPaths = [
   '/portal',
   '/portal-campaigns',
   '/site',
-  '/website',
   '/voucher',
   '/refer',
   '/privacy',
