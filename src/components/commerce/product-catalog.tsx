@@ -87,6 +87,10 @@ const euro = (value: unknown) =>
   new Intl.NumberFormat("pt-PT", { style: "currency", currency: "EUR" }).format(
     Number(value || 0),
   );
+const automaticSku = (name: string) => {
+  const base = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 18) || "PRODUTO";
+  return `PF-${base}-${Date.now().toString(36).slice(-5).toUpperCase()}`;
+};
 
 export function ProductCatalog() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -256,7 +260,8 @@ export function ProductCatalog() {
     const result = await response.json().catch(() => ({})) as { error?: string; warning?: string; data?: { name?: string; description?: string; imageUrl?: string } };
     setImporting(false);
     if (!response.ok || !result.data) { setError(result.error || "Não foi possível importar este link."); return; }
-    setForm((current) => ({ ...current, name: result.data?.name || current.name, description: result.data?.description || current.description, imageUrl: result.data?.imageUrl || current.imageUrl }));
+    const importedName = result.data?.name || "";
+    setForm((current) => ({ ...current, name: importedName || current.name, sku: current.sku || automaticSku(importedName), description: result.data?.description || current.description, imageUrl: result.data?.imageUrl || current.imageUrl }));
     setImportOpen(false); setImportUrl(""); setOpen(true); if (result.warning) setError(result.warning);
   }
 
@@ -492,7 +497,7 @@ export function ProductCatalog() {
                   <Field label="Nome do produto" required>
                     <Input
                       value={form.name}
-                      onChange={(e) => field("name", e.target.value)}
+                      onChange={(e) => setForm((current) => ({ ...current, name: e.target.value, sku: current.sku || automaticSku(e.target.value) }))}
                       required
                       placeholder="Ex.: Suporte para comando personalizado"
                     />
@@ -534,7 +539,7 @@ export function ProductCatalog() {
                           field("sku", e.target.value.toUpperCase())
                         }
                         required
-                        placeholder="PF-0001"
+                        placeholder="Gerado automaticamente"
                       />
                     </Field>
                     <Field label="Preço de venda (€)" required>
