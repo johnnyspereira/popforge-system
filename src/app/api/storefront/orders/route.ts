@@ -5,6 +5,7 @@ import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { InsufficientStockError, reserveVariantStock } from "@/lib/commerce/stock";
 import { clientIp, resolveStorefrontContact } from "@/lib/commerce/storefront-contact";
 import { createProductionPlan } from "@/lib/commerce/production-plan";
+import { notifyAccountEvent } from "@/lib/notifications/account-events";
 
 type VariantRow = RowDataPacket & { id: string; account_id: string; product_id: string; sku: string; price: string | number; stock_quantity: string | number; track_stock: boolean | number; product_name: string };
 type CartInput = { variantId: string; quantity: number; customization?: Record<string, unknown> };
@@ -76,9 +77,22 @@ export async function POST(request: Request) {
       // The jobs are queued from the product's explicit production defaults.
       // They are not started until the order is confirmed by the operator.
       await createProductionPlan(connection, { accountId, orderId, actorUserId: owners[0].owner_user_id });
-      return { orderNumber: order.insertId, orderId, saleId };
+      return { orderNumber: order.insertId, orderId, saleId, accountId, customerName: name };
     });
-    return Response.json({ success: true, ...result }, { status: 201 });
+    await notifyAccountEvent({
+      accountId: result.accountId,
+      type: "commerce_order_created",
+      category: "sales",
+      priority: "high",
+      title: `Nova encomenda #${result.orderNumber}`,
+      body: `${result.customerName} criou uma encomenda na loja online.`,
+      actionUrl: `/commerce/encomendas?id=${result.orderId}`,
+      dedupeKey: `commerce-order-created:${result.orderId}`,
+      metadata: { orderId: result.orderId, orderNumber: result.orderNumber },
+      whatsappText: `Nova encomenda #${result.orderNumber} recebida na loja online.`,
+    });
+    const { accountId: _accountId, customerName: _customerName, ...publicResult } = result;
+    return Response.json({ success: true, ...publicResult }, { status: 201 });
   } catch (error) {
     const code = error instanceof InsufficientStockError ? "INSUFFICIENT_STOCK" : error instanceof Error ? error.message : "";
     const messages: Record<string, string> = { PRODUCT_UNAVAILABLE: "Um dos produtos já não está disponível.", INSUFFICIENT_STOCK: "A quantidade pedida já não está disponível.", MIXED_STORE: "O carrinho contém produtos de lojas diferentes.", ACCOUNT_UNAVAILABLE: "A loja não está disponível." };

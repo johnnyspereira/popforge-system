@@ -5,6 +5,7 @@ import { getAuthContext } from "@/lib/auth/service";
 import { hasMinRole } from "@/lib/auth/roles";
 import { resolveStorefrontContact } from "@/lib/commerce/storefront-contact";
 import { selectRows, transaction } from "@/lib/mysql/db";
+import { syncProductionOrder } from "@/lib/commerce/production-sync";
 
 const clean = (value: unknown, limit = 500) => String(value ?? "").trim().slice(0, limit);
 const number = (value: unknown, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
@@ -108,16 +109,20 @@ async function updateJob(auth: NonNullable<Awaited<ReturnType<typeof authContext
   const energyCost = body?.energyCost === undefined ? null : Math.max(0, number(body?.energyCost));
   const laborCost = body?.laborCost === undefined ? null : Math.max(0, number(body?.laborCost));
   const otherCost = body?.otherCost === undefined ? null : Math.max(0, number(body?.otherCost));
-  const [result] = await transaction(async (connection) => {
+  const result = await transaction(async (connection) => {
     const printerId = clean(body?.printerId, 36);
     let printer: (RowDataPacket & { id: string; name: string }) | undefined;
     if (printerId) {
       const [printers] = await connection.execute<(RowDataPacket & { id: string; name: string })[]>("SELECT id,name FROM commerce_printers WHERE id=? AND account_id=? LIMIT 1", [printerId, auth.account.id]);
       printer = printers[0];
     }
-    return connection.execute<ResultSetHeader>("UPDATE commerce_production_jobs SET status=?,printer_id=?,printer_name=?,actual_minutes=COALESCE(?,actual_minutes),actual_labor_minutes=COALESCE(?,actual_labor_minutes),actual_labor_cost=COALESCE(?,actual_labor_cost),actual_energy_cost=COALESCE(?,actual_energy_cost),actual_other_cost=COALESCE(?,actual_other_cost),internal_notes=?,started_at=CASE WHEN ?='printing' AND started_at IS NULL THEN UTC_TIMESTAMP(3) ELSE started_at END,completed_at=CASE WHEN ? IN ('completed','failed') THEN UTC_TIMESTAMP(3) ELSE completed_at END WHERE id=? AND account_id=?", [status, printer?.id || null, printer?.name || clean(body?.printerName, 120) || null, actualMinutes, laborMinutes, laborCost, energyCost, otherCost, clean(body?.notes, 5000) || null, status, status, jobId, auth.account.id]);
+    const [updated] = await connection.execute<ResultSetHeader>("UPDATE commerce_production_jobs SET status=?,printer_id=?,printer_name=?,actual_minutes=COALESCE(?,actual_minutes),actual_labor_minutes=COALESCE(?,actual_labor_minutes),actual_labor_cost=COALESCE(?,actual_labor_cost),actual_energy_cost=COALESCE(?,actual_energy_cost),actual_other_cost=COALESCE(?,actual_other_cost),internal_notes=?,started_at=CASE WHEN ?='printing' AND started_at IS NULL THEN UTC_TIMESTAMP(3) ELSE started_at END,completed_at=CASE WHEN ? IN ('completed','failed') THEN UTC_TIMESTAMP(3) ELSE completed_at END WHERE id=? AND account_id=?", [status, printer?.id || null, printer?.name || clean(body?.printerName, 120) || null, actualMinutes, laborMinutes, laborCost, energyCost, otherCost, clean(body?.notes, 5000) || null, status, status, jobId, auth.account.id]);
+    if (!updated.affectedRows) return { affectedRows: 0, sync: null };
+    const [jobRows] = await connection.execute<RowDataPacket[]>("SELECT order_id FROM commerce_production_jobs WHERE id=? AND account_id=?", [jobId, auth.account.id]);
+    const sync = jobRows[0]?.order_id ? await syncProductionOrder(connection, jobRows[0].order_id, auth.user.id) : null;
+    return { affectedRows: updated.affectedRows, sync };
   });
-  if (!result.affectedRows) throw new Error("JOB_NOT_FOUND"); return { success: true };
+  if (!result.affectedRows) throw new Error("JOB_NOT_FOUND"); return { success: true, order: result.sync };
 }
 
 async function updateUnit(auth: NonNullable<Awaited<ReturnType<typeof authContext>>>, body: Record<string, unknown> | null) {
@@ -125,13 +130,28 @@ async function updateUnit(auth: NonNullable<Awaited<ReturnType<typeof authContex
   const status = clean(body?.unitStatus, 30);
   const allowed = new Set(['pending', 'printing', 'printed', 'quality_check', 'approved', 'rejected', 'reprint']);
   if (!unitId || !allowed.has(status)) throw new Error('INVALID_UNIT_STATUS');
-  const [result] = await transaction(async (connection) => connection.execute<ResultSetHeader>(
+  const result = await transaction(async (connection) => {
+    const [updated] = await connection.execute<ResultSetHeader>(
     `UPDATE commerce_production_units SET status=?, color=COALESCE(NULLIF(?,''),color), quality_notes=?,
       printed_at=CASE WHEN ? IN ('printed','quality_check','approved','rejected') AND printed_at IS NULL THEN UTC_TIMESTAMP(3) ELSE printed_at END,
       quality_checked_at=CASE WHEN ? IN ('approved','rejected') THEN UTC_TIMESTAMP(3) ELSE quality_checked_at END
       WHERE id=? AND account_id=?`,
     [status, clean(body?.color, 80), clean(body?.qualityNotes, 2000) || null, status, status, unitId, auth.account.id],
-  ));
+    );
+    if (!updated.affectedRows) return { affectedRows: 0, sync: null };
+    const [unitRows] = await connection.execute<RowDataPacket[]>("SELECT production_job_id FROM commerce_production_units WHERE id=? AND account_id=?", [unitId, auth.account.id]);
+    const jobId = unitRows[0]?.production_job_id;
+    let sync = null;
+    if (jobId && status === 'approved') {
+      const [counts] = await connection.execute<(RowDataPacket & { pending: number })[]>("SELECT COUNT(*) AS pending FROM commerce_production_units WHERE production_job_id=? AND status<>'approved'", [jobId]);
+      if (!Number(counts[0]?.pending)) {
+        await connection.execute("UPDATE commerce_production_jobs SET status='completed',completed_at=UTC_TIMESTAMP(3) WHERE id=? AND account_id=?", [jobId, auth.account.id]);
+        const [jobs] = await connection.execute<RowDataPacket[]>("SELECT order_id FROM commerce_production_jobs WHERE id=?", [jobId]);
+        if (jobs[0]?.order_id) sync = await syncProductionOrder(connection, jobs[0].order_id, auth.user.id);
+      }
+    }
+    return { affectedRows: updated.affectedRows, sync };
+  });
   if (!result.affectedRows) throw new Error('UNIT_NOT_FOUND');
-  return { success: true };
+  return { success: true, order: result.sync };
 }
