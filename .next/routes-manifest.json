@@ -1292,6 +1292,12 @@
       "namedRegex": "^/api/v1/webhooks(?:/)?$"
     },
     {
+      "page": "/api/website/settings",
+      "regex": "^/api/website/settings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/website/settings(?:/)?$"
+    },
+    {
       "page": "/api/whatsapp/baileys/logout",
       "regex": "^/api/whatsapp/baileys/logout(?:/)?$",
       "routeKeys": {},
