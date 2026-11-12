@@ -63,6 +63,7 @@ type FormState = {
   trackStock: boolean;
   variantName: string;
   kitComponents: Array<{ variantId: string; quantity: number }>;
+  sourceReference?: string;
 };
 const empty: FormState = {
   name: "",
@@ -264,7 +265,17 @@ export function ProductCatalog() {
     }
     const result = await response.json().catch(() => ({})) as { error?: string; warning?: string; data?: { name?: string; description?: string; imageUrl?: string } };
     setImporting(false);
-    if (!response.ok || !result.data) { setError(result.error || "Não foi possível importar este link."); return; }
+    if (!response.ok || !result.data) {
+      try {
+        const parsed = new URL(importUrl);
+        const fallbackName = decodeURIComponent(parsed.pathname.split('/').filter(Boolean).pop() || '').replace(/^\d+-/, '').replace(/[-_]+/g, ' ').replace(/\b\d{5,}\b/g, '').replace(/\s+/g, ' ').trim();
+        if (fallbackName) {
+          setForm((current) => ({ ...current, name: fallbackName.slice(0, 180), sku: current.sku || automaticSku(fallbackName), description: current.description || `Referência importada de ${parsed.hostname}.`, sourceReference: parsed.toString() } as FormState));
+          setImportOpen(false); setImportUrl(""); setOpen(true); setError("O site não permitiu obter a imagem automaticamente. O rascunho foi criado; complete a imagem e confirme os dados."); return;
+        }
+      } catch { /* handled by the normal message below */ }
+      setError(result.error || "Não foi possível importar este link."); return;
+    }
     const importedName = result.data?.name || "";
     setForm((current) => ({ ...current, name: importedName || current.name, sku: current.sku || automaticSku(importedName), description: result.data?.description || current.description, imageUrl: result.data?.imageUrl || current.imageUrl }));
     setImportOpen(false); setImportUrl(""); setOpen(true); if (result.warning) setError(result.warning);
