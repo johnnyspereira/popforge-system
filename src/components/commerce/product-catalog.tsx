@@ -257,6 +257,16 @@ export function ProductCatalog() {
   }
   async function importFromUrl(event: React.FormEvent) {
     event.preventDefault(); setImporting(true); setError("");
+    try {
+      const parsed = new URL(importUrl);
+      const fallbackName = decodeURIComponent(parsed.pathname.split('/').filter(Boolean).pop() || '').replace(/^\d+-/, '').replace(/[-_]+/g, ' ').replace(/\b\d{5,}\b/g, '').replace(/\s+/g, ' ').trim();
+      if (fallbackName) {
+        setForm((current) => ({ ...current, name: fallbackName.slice(0, 180), sku: current.sku || automaticSku(fallbackName), description: current.description || `Referência importada de ${parsed.hostname}.`, sourceReference: parsed.toString() }));
+        setImporting(false); setImportOpen(false); setImportUrl(""); setOpen(true);
+        // The form is available immediately; server enrichment is optional.
+        return;
+      }
+    } catch { /* let the API return the validation message */ }
     let response: Response;
     try {
       response = await fetch("/api/commerce/products/import-url", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: importUrl }), signal: AbortSignal.timeout(20000) });
