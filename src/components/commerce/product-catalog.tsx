@@ -253,11 +253,11 @@ export function ProductCatalog() {
   async function importFromUrl(event: React.FormEvent) {
     event.preventDefault(); setImporting(true); setError("");
     const response = await fetch("/api/commerce/products/import-url", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: importUrl }) });
-    const result = await response.json().catch(() => ({})) as { error?: string; data?: { name?: string; description?: string; imageUrl?: string } };
+    const result = await response.json().catch(() => ({})) as { error?: string; warning?: string; data?: { name?: string; description?: string; imageUrl?: string } };
     setImporting(false);
     if (!response.ok || !result.data) { setError(result.error || "Não foi possível importar este link."); return; }
     setForm((current) => ({ ...current, name: result.data?.name || current.name, description: result.data?.description || current.description, imageUrl: result.data?.imageUrl || current.imageUrl }));
-    setImportOpen(false); setImportUrl(""); setOpen(true);
+    setImportOpen(false); setImportUrl(""); setOpen(true); if (result.warning) setError(result.warning);
   }
 
   return (

@@ -28,6 +28,12 @@ export async function POST(request: Request) {
     return Response.json({ success: true, sourceUrl: url.toString(), data: { name: title, description, imageUrl: image ? new URL(image, url).toString() : '', sourceReference: url.toString() } });
   } catch (error) {
     console.error('[product-import-url]', error);
+    // Some catalogue sites (notably MakerWorld) block server-side HTML
+    // requests. Still return a useful draft instead of making the import
+    // button appear broken; the operator can complete image and description.
+    const fallbackName = decodeURIComponent(url.pathname.split('/').filter(Boolean).pop() || '')
+      .replace(/[-_]+/g, ' ').replace(/\b\d{5,}\b/g, '').replace(/\s+/g, ' ').trim();
+    if (fallbackName) return Response.json({ success: true, warning: 'O site bloqueou a leitura automática. O nome foi recuperado do URL; confirme a imagem e a descrição.', sourceUrl: url.toString(), data: { name: fallbackName.slice(0, 180), description: '', imageUrl: '', sourceReference: url.toString() } });
     return Response.json({ error: 'Não foi possível ler esse site. Confirme o link ou preencha o produto manualmente.' }, { status: 422 });
   }
 }
