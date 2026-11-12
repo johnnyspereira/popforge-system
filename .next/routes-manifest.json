@@ -950,6 +950,12 @@
       "namedRegex": "^/api/commerce/products(?:/)?$"
     },
     {
+      "page": "/api/commerce/products/import-url",
+      "regex": "^/api/commerce/products/import\\-url(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/commerce/products/import\\-url(?:/)?$"
+    },
+    {
       "page": "/api/commerce/quotes",
       "regex": "^/api/commerce/quotes(?:/)?$",
       "routeKeys": {},
