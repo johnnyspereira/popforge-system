@@ -3,6 +3,13 @@ export const releaseNotes = [
   {
     date: '2026-11-13',
     areas: ['Catálogo', 'Loja pública'],
+    title: 'Tipo PACK configurável no catálogo',
+    description: 'O editor passou a permitir selecionar PACK como tipo de produto. A loja pública mostra a etiqueta PACK e a base de dados aceita este novo tipo.',
+    usage: 'No editor do produto, abra Tipo e escolha Pack. A migração 067 deve estar aplicada no cPanel.',
+  },
+  {
+    date: '2026-11-13',
+    areas: ['Catálogo', 'Loja pública'],
     title: 'Tags visuais para tipos de produto',
     description: 'Produtos KIT, PACK, por encomenda e pronta entrega passam a ter uma etiqueta colorida no catálogo e na loja pública.',
     usage: 'O tipo é determinado no editor do produto; produtos com “Pack” no nome recebem a etiqueta PACK até existir um campo de tipo PACK dedicado.',
