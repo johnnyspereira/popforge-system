@@ -267,8 +267,9 @@ export async function PATCH(request: Request) {
           auth.account.id,
         ],
       );
+      // A non-kit product must remain editable even when the optional KIT
+      // migration has not yet been applied in a deployment.
       if (productType(body?.productType) === "kit") await replaceKitComponents(connection, auth.account.id, variantId, kitComponents(body?.kitComponents));
-      else await connection.execute("DELETE FROM commerce_product_kit_components WHERE account_id=? AND kit_variant_id=?", [auth.account.id, variantId]);
     });
     return Response.json({ success: true });
   } catch (error) {

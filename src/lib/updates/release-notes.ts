@@ -2,6 +2,13 @@
 export const releaseNotes = [
   {
     date: '2026-11-13',
+    areas: ['Catálogo', 'Kits'],
+    title: 'Produtos normais não dependem da migração de kits',
+    description: 'Corrigida a gravação de peças prontas e produzidas por encomenda quando a tabela opcional de componentes de KIT ainda não existe no runtime.',
+    usage: 'Edite e guarde produtos que não são KIT normalmente; a migração só é exigida ao criar ou editar um KIT.',
+  },
+  {
+    date: '2026-11-13',
     areas: ['Catálogo'],
     title: 'Variantes acessíveis no produto agrupado',
     description: 'Cada produto continua a aparecer uma vez, mas as variantes ficam visíveis como opções dentro da linha e podem ser editadas individualmente.',
