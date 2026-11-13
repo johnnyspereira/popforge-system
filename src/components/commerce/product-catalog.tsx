@@ -434,6 +434,7 @@ export function ProductCatalog() {
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="truncate font-semibold">{product.name}</p>
+                      <Badge variant="outline" className={product.product_type === "kit" ? "border-violet-300 bg-violet-50 text-violet-700" : /pack/i.test(product.name) ? "border-blue-300 bg-blue-50 text-blue-700" : product.product_type === "made_to_order" ? "border-amber-300 bg-amber-50 text-amber-700" : "border-emerald-300 bg-emerald-50 text-emerald-700"}>{product.product_type === "kit" ? "KIT" : /pack/i.test(product.name) ? "PACK" : product.product_type === "made_to_order" ? "ENCOMENDA" : "PRONTA ENTREGA"}</Badge>
                       {product.featured ? (
                         <Badge className="bg-cyan-500/10 text-cyan-700">
                           <Sparkles className="size-3" />
