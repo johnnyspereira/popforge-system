@@ -42,6 +42,8 @@ type Product = {
   color: string | null;
   weight_grams: string | null;
   kitComponents?: Array<{ variantId: string; quantity: number }>;
+  variantCount?: number;
+  variants?: Product[];
 };
 type FormState = {
   id?: string;
@@ -142,11 +144,11 @@ export function ProductCatalog() {
             (filter === "low" && Number(product.stock_quantity) <= 2))
         );
       });
-      const grouped = new Map<string, Product & { variantCount: number }>();
+      const grouped = new Map<string, Product & { variantCount: number; variants: Product[] }>();
       for (const product of filtered) {
         const current = grouped.get(product.id);
-        if (current) current.variantCount += 1;
-        else grouped.set(product.id, { ...product, variantCount: 1 });
+        if (current) { current.variantCount += 1; current.variants.push(product); }
+        else grouped.set(product.id, { ...product, variantCount: 1, variants: [product] });
       }
       return [...grouped.values()];
     }, [filter, products, query]);
@@ -445,6 +447,7 @@ export function ProductCatalog() {
                         .filter(Boolean)
                         .join(" · ") || "Sem atributos"}
                     </p>
+                    {product.variantCount && product.variantCount > 1 ? <div className="mt-2 flex flex-wrap gap-1.5">{product.variants?.map((variant) => <Button key={variant.variant_id} type="button" size="sm" variant="outline" className="h-7 px-2 text-[11px]" onClick={() => edit(variant)}>{variant.color || variant.material || variant.variant_name || variant.sku}</Button>)}</div> : null}
                   </div>
                   <div>
                     <p className="font-semibold">{euro(product.price)}</p>
