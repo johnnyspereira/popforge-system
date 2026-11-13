@@ -116,6 +116,7 @@ export function WebsiteBuilder() {
     [schemaMissing, setSchemaMissing] = useState(false),
     [leads, setLeads] = useState<Lead[]>([]),
     [googleConnection, setGoogleConnection] = useState<GoogleConnection | null>(null);
+  const [catalogProducts, setCatalogProducts] = useState<Array<{ name: string; image_url?: string | null; price?: number | string; featured?: boolean }>>([]);
   const heroInputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (!accountId) return;
@@ -146,6 +147,7 @@ export function WebsiteBuilder() {
       setLoading(false);
       toast.error('Não foi possível carregar o editor do site.');
     });
+    fetch('/api/commerce/products', { cache: 'no-store' }).then((response) => response.ok ? response.json() : { products: [] }).then((payload) => setCatalogProducts((payload.products || []).filter((item: { status?: string }) => item.status === 'active').slice(0, 6))).catch(() => setCatalogProducts([]));
   }, [account?.name, accountId, db]);
   useEffect(() => {
     const google = new URLSearchParams(window.location.search).get('google');
@@ -659,7 +661,7 @@ export function WebsiteBuilder() {
             </Panel>
           </TabsContent>
         </Tabs>
-        <SitePreview form={form} accountName={account?.name || 'Sua empresa'} />
+        <SitePreview form={form} accountName={account?.name || 'Sua empresa'} products={catalogProducts} />
       </div>
     </div>
   );
@@ -667,9 +669,11 @@ export function WebsiteBuilder() {
 function SitePreview({
   form,
   accountName,
+  products,
 }: {
   form: Omit<PublicSiteSettings, 'account_id'>;
   accountName: string;
+  products: Array<{ name: string; image_url?: string | null; price?: number | string; featured?: boolean }>;
 }) {
   const theme = getPublicSiteTheme(form.site_theme);
   return (
@@ -729,6 +733,13 @@ function SitePreview({
                 </p>
               </div>
             ))}
+          </div>
+          <div className="mt-6 border-t pt-5">
+            <p className="text-xs font-medium text-[var(--site-primary)]">CATÁLOGO POPFORGE</p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {products.slice(0, 4).map((product) => <div key={product.name} className="overflow-hidden rounded-lg border bg-white"><div className="aspect-square bg-slate-100">{product.image_url && <img src={product.image_url} alt="" className="size-full object-cover" />}</div><div className="p-2"><b className="block truncate text-[10px]">{product.name}</b><span className="text-[10px] text-slate-500">{Number(product.price || 0).toLocaleString('pt-PT',{style:'currency',currency:'EUR'})}</span></div></div>)}
+              {!products.length && <p className="col-span-2 text-xs text-slate-500">Publique produtos no Catálogo para os mostrar aqui.</p>}
+            </div>
           </div>
         </div>
       </div>
