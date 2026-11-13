@@ -82,7 +82,7 @@ async function context() {
 type KitComponent = { variantId: string; quantity: number };
 function productType(value: unknown) {
   const type = clean(value, 30);
-  return ["ready_made", "made_to_order", "custom_quote", "kit"].includes(type) ? type : "ready_made";
+  return ["ready_made", "made_to_order", "custom_quote", "kit", "pack"].includes(type) ? type : "ready_made";
 }
 function kitComponents(value: unknown): KitComponent[] {
   if (!Array.isArray(value)) return [];

@@ -688,6 +688,7 @@ export function ProductCatalog() {
                         Produzido por encomenda
                       </option>
                       <option value="kit">Kit com peças de produção</option>
+                      <option value="pack">Pack</option>
                       <option value="custom_quote">
                         Orçamento personalizado
                       </option>

@@ -514,7 +514,7 @@ export function ProductCard({
         )}
         {(product.badge || product.productType !== "ready_made") && (
           <span className="absolute left-3 top-3 bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide">
-            {product.badge || (product.productType === "kit" ? "KIT" : product.productType === "made_to_order" ? "ENCOMENDA" : "PERSONALIZÁVEL")}
+            {product.badge || (product.productType === "kit" ? "KIT" : product.productType === "pack" ? "PACK" : product.productType === "made_to_order" ? "ENCOMENDA" : "PERSONALIZÁVEL")}
           </span>
         )}
       </Link>
