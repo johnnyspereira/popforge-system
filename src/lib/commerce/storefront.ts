@@ -104,7 +104,9 @@ export async function loadStorefrontCatalog(accountId: string): Promise<Storefro
     });
   }
   for (const product of products.values()) if (product.imageUrl && !product.images.includes(product.imageUrl)) product.images.unshift(product.imageUrl);
-  return { products: [...products.values()], categories: categories.map((category) => ({ slug: category.slug, name: category.name, description: category.description, imageUrl: category.image_url })) };
+  const siteRows = await selectRows<Array<RowDataPacket & { hero_badge: string | null; hero_title: string | null; hero_subtitle: string | null; hero_image_url: string | null; primary_color: string | null; accent_color: string | null }>>('SELECT hero_badge,hero_title,hero_subtitle,hero_image_url,primary_color,accent_color FROM public_site_settings WHERE account_id=? LIMIT 1',[accountId]).catch(() => []);
+  const site = siteRows[0] ? { heroBadge: siteRows[0].hero_badge, heroTitle: siteRows[0].hero_title, heroSubtitle: siteRows[0].hero_subtitle, heroImageUrl: siteRows[0].hero_image_url, primaryColor: siteRows[0].primary_color, accentColor: siteRows[0].accent_color } : null;
+  return { products: [...products.values()], categories: categories.map((category) => ({ slug: category.slug, name: category.name, description: category.description, imageUrl: category.image_url })), site };
 }
 
 export async function loadStorefrontProduct(accountId: string, slug: string) {

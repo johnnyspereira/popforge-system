@@ -2,6 +2,13 @@
 export const releaseNotes = [
   {
     date: '2026-11-13',
+    areas: ['Loja pública', 'Site público'],
+    title: 'Configurações do editor aplicadas à loja',
+    description: 'A loja pública passa a ler do editor o selo, título, subtítulo, imagem principal e cores do hero. O catálogo e as coleções continuam a ser carregados da conta POPForge.',
+    usage: 'Edite Site público → Identidade e publique. Abra a loja pública para ver as alterações.',
+  },
+  {
+    date: '2026-11-13',
     areas: ['Site público', 'Catálogo'],
     title: 'Preview associado ao catálogo POPForge',
     description: 'O editor do site passa a carregar os produtos ativos do catálogo da conta e mostra nome, imagem e preço reais na pré-visualização.',

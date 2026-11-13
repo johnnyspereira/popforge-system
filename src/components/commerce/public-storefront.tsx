@@ -63,6 +63,7 @@ export function PublicStorefront({ catalog }: { catalog: StorefrontCatalog }) {
     .slice(0, 6);
   const heroSlides = featured.length ? featured : catalog.products.slice(0, 1);
   const hero = heroSlides[heroIndex % Math.max(1, heroSlides.length)];
+  const site = catalog.site;
   useEffect(() => {
     if (heroSlides.length < 2) return;
     const timer = window.setInterval(() => setHeroIndex((index) => (index + 1) % heroSlides.length), 6000);
@@ -107,7 +108,7 @@ export function PublicStorefront({ catalog }: { catalog: StorefrontCatalog }) {
   );
   const count = cart.reduce((sum, item) => sum + item.quantity, 0);
   return (
-    <div className="min-h-screen bg-[#fcfcfa] text-[#161615]">
+    <div className="min-h-screen bg-[#fcfcfa] text-[#161615]" style={{ '--store-primary': site?.primaryColor || '#e6532f', '--store-dark': site?.accentColor || '#171716' } as React.CSSProperties}>
       <div className="bg-[#171716] px-4 py-2 text-center text-[11px] font-medium tracking-wide text-white">
         PRODUÇÃO 3D FEITA EM PORTUGAL · PEÇAS PRONTAS E PROJETOS À MEDIDA
       </div>
@@ -193,10 +194,10 @@ export function PublicStorefront({ catalog }: { catalog: StorefrontCatalog }) {
           <div className="mx-auto grid max-w-[1440px] lg:grid-cols-[1.05fr_.95fr]">
             <div className="flex min-h-[480px] flex-col justify-center px-5 py-16 sm:px-10 lg:px-16">
               <p className="text-xs font-bold tracking-[.18em] text-[#e6532f] uppercase">
-                Design, utilidade e personalidade
+                {site?.heroBadge || 'Design, utilidade e personalidade'}
               </p>
               <h1 className="mt-5 max-w-2xl text-5xl font-black leading-[.94] tracking-[-.065em] sm:text-7xl">
-                Objetos que tornam o seu espaço{" "}
+                {site?.heroTitle || 'Objetos que tornam o seu espaço'}{" "}
                 <i className="font-serif font-normal">único.</i>
               </h1>
               <p className="mt-7 max-w-xl text-base leading-7 text-[#64625d] sm:text-lg">
@@ -233,10 +234,10 @@ export function PublicStorefront({ catalog }: { catalog: StorefrontCatalog }) {
               </div>
             </div>
             <div className="relative min-h-[390px] overflow-hidden bg-[#e8e5dc] lg:min-h-0">
-              {hero?.imageUrl ? (
+              {site?.heroImageUrl || hero?.imageUrl ? (
                 <img
-                  src={hero.imageUrl}
-                  alt={hero.name}
+                  src={site?.heroImageUrl || hero?.imageUrl || ''}
+                  alt={hero?.name || site?.heroTitle || 'POPForge'}
                   className="absolute inset-0 size-full object-cover"
                 />
               ) : (

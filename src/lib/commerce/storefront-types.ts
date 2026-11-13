@@ -37,4 +37,5 @@ export type StorefrontCategory = {
 export type StorefrontCatalog = {
   products: StorefrontProduct[];
   categories: StorefrontCategory[];
+  site?: { heroBadge?: string | null; heroTitle?: string | null; heroSubtitle?: string | null; heroImageUrl?: string | null; primaryColor?: string | null; accentColor?: string | null } | null;
 };

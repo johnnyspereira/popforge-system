@@ -9,6 +9,6 @@ export const metadata: Metadata = { title: "POPForge — Custom 3D Creations", d
 export default async function StorefrontPage() {
   const host = (await headers()).get("host") || undefined;
   const accountId = await resolveStorefrontAccount(host);
-  const catalog = accountId ? await loadStorefrontCatalog(accountId).catch(() => ({ products: [], categories: [] })) : { products: [], categories: [] };
+  const catalog = accountId ? await loadStorefrontCatalog(accountId).catch(() => ({ products: [], categories: [], site: null })) : { products: [], categories: [], site: null };
   return <PublicStorefront catalog={catalog} />;
 }
