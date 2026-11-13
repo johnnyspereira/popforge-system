@@ -2,6 +2,13 @@
 export const releaseNotes = [
   {
     date: '2026-11-13',
+    areas: ['Catálogo'],
+    title: 'Variantes agrupadas por produto',
+    description: 'A listagem do catálogo mostra cada produto apenas uma vez. As variantes continuam disponíveis no editor e são contabilizadas no produto.',
+    usage: 'Abra Catálogo; produtos com várias cores ou materiais aparecem numa única linha.',
+  },
+  {
+    date: '2026-11-13',
     areas: ['Loja pública', 'Site público'],
     title: 'Configurações do editor aplicadas à loja',
     description: 'A loja pública passa a ler do editor o selo, título, subtítulo, imagem principal e cores do hero. O catálogo e as coleções continuam a ser carregados da conta POPForge.',

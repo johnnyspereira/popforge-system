@@ -129,9 +129,8 @@ export function ProductCatalog() {
     return () => window.clearTimeout(timer);
   }, [load]);
 
-  const visible = useMemo(
-    () =>
-      products.filter((product) => {
+  const visible = useMemo(() => {
+      const filtered = products.filter((product) => {
         const match =
           `${product.name} ${product.sku} ${product.material || ""} ${product.color || ""}`
             .toLowerCase()
@@ -142,13 +141,19 @@ export function ProductCatalog() {
             product.status === filter ||
             (filter === "low" && Number(product.stock_quantity) <= 2))
         );
-      }),
-    [filter, products, query],
-  );
-  const active = products.filter((p) => p.status === "active").length;
-  const low = products.filter(
+      });
+      const grouped = new Map<string, Product & { variantCount: number }>();
+      for (const product of filtered) {
+        const current = grouped.get(product.id);
+        if (current) current.variantCount += 1;
+        else grouped.set(product.id, { ...product, variantCount: 1 });
+      }
+      return [...grouped.values()];
+    }, [filter, products, query]);
+  const active = new Set(products.filter((p) => p.status === "active").map((p) => p.id)).size;
+  const low = new Set(products.filter(
     (p) => Number(p.stock_quantity) <= 2 && p.status !== "archived",
-  ).length;
+  ).map((p) => p.id)).size;
   const value = products.reduce(
     (sum, p) => sum + Number(p.cost_price || 0) * Number(p.stock_quantity || 0),
     0,
