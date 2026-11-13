@@ -21,7 +21,7 @@ export type StorefrontProduct = {
   category: { slug: string; name: string } | null;
   dimensions: string | null;
   badge: string | null;
-  productType: "ready_made" | "made_to_order" | "custom_quote";
+  productType: "ready_made" | "made_to_order" | "custom_quote" | "kit";
   customizable: boolean;
   featured: boolean;
   variants: StorefrontVariant[];

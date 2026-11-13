@@ -2,6 +2,13 @@
 export const releaseNotes = [
   {
     date: '2026-11-13',
+    areas: ['Catálogo', 'Loja pública'],
+    title: 'Tags visuais para tipos de produto',
+    description: 'Produtos KIT, PACK, por encomenda e pronta entrega passam a ter uma etiqueta colorida no catálogo e na loja pública.',
+    usage: 'O tipo é determinado no editor do produto; produtos com “Pack” no nome recebem a etiqueta PACK até existir um campo de tipo PACK dedicado.',
+  },
+  {
+    date: '2026-11-13',
     areas: ['Catálogo', 'Kits'],
     title: 'Produtos normais não dependem da migração de kits',
     description: 'Corrigida a gravação de peças prontas e produzidas por encomenda quando a tabela opcional de componentes de KIT ainda não existe no runtime.',
