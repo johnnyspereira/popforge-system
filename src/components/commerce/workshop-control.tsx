@@ -16,7 +16,7 @@ export function WorkshopControl() {
   const [message, setMessage] = useState("");
   const [filter, setFilter] = useState("active");
   const load = async () => { const response = await fetch("/api/commerce/workshop", { cache: "no-store" }); if (response.ok) setData(await response.json()); };
-  useEffect(() => { void load(); }, []);
+  useEffect(() => { void load(); const timer = window.setInterval(() => void load(), 10000); return () => window.clearInterval(timer); }, []);
   const jobs = useMemo(() => (data?.jobs || []).filter((job) => filter === "all" || filter === "active" ? !["completed", "failed"].includes(job.status) : job.status === filter), [data, filter]);
   const unitsFor = (jobId: string) => (data?.units || []).filter((unit) => unit.production_job_id === jobId);
   async function action(payload: Record<string, unknown>) {
