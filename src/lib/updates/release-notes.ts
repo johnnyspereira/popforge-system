@@ -1,5 +1,6 @@
 /** Notas de versão apresentadas nas definições do CRM. */
 export const releaseNotes = [
+  {date:'2026-11-25',areas:['Workers','Impressoras'],title:'Estado standby reconhecido',description:'Impressoras Creality em standby deixam de aparecer como offline; o Worker classifica-as como disponíveis.',usage:'Atualize o Worker local e execute-o novamente.'},
   {date:'2026-11-25',areas:['Oficina'],title:'Quadro de produção atualizado automaticamente',description:'A oficina atualiza a fila e os trabalhos ativos a cada 10 segundos para refletir alterações dos Workers e das encomendas.',usage:'Abra Oficina; a fila é atualizada sem recarregar a página.'},
   {date:'2026-11-25',areas:['Impressoras'],title:'Gestão completa de Workers e pedidos',description:'Adicionados botões para gerar chave do Worker e associar pedidos de produção a cada impressora.',usage:'Em Impressoras, use Gerar chave ou Associar pedido.'},
   { date: '2026-11-25', areas: ['Impressoras', 'Produção'], title: 'Estado dos Workers e fila visíveis', description: 'O Centro de impressoras atualiza o estado real, progresso, último contacto, erros e trabalhos pendentes automaticamente.', usage: 'Abra Impressoras; os dados são atualizados a cada 10 segundos.' },

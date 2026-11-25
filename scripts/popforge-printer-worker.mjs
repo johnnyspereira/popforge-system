@@ -34,7 +34,7 @@ const data = raw?.result?.status ?? raw?.status ?? raw;
 const print = data.print_stats ?? {};
 const virtualSd = data.virtual_sdcard ?? {};
 const state = String(print.state || data.state || 'offline').toLowerCase();
-const status = state.includes('print') ? 'printing' : state.includes('pause') ? 'paused' : state.includes('error') || state.includes('cancel') ? 'error' : state.includes('idle') || state.includes('ready') ? 'idle' : 'offline';
+const status = state.includes('print') ? 'printing' : state.includes('pause') ? 'paused' : state.includes('error') || state.includes('cancel') ? 'error' : state.includes('idle') || state.includes('ready') || state.includes('standby') ? 'idle' : 'offline';
 const payload = {
   printerId: process.env.POPFORGE_PRINTER_ID,
   status,
