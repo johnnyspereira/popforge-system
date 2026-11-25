@@ -2,6 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import type { RowDataPacket } from 'mysql2';
 import { sendOrderUpdateEmail } from '@/lib/commerce/order-communication';
 import { transaction, selectRows } from '@/lib/mysql/db';
+import { notifyAccountEvent } from '@/lib/notifications/account-events';
 
 const clean = (value: unknown, limit: number) => String(value ?? '').trim().slice(0, limit);
 const hash = (value: string) => createHash('sha256').update(value).digest('hex');
@@ -14,10 +15,11 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null) as Record<string, unknown> | null;
   const printerId = clean(body?.printerId, 36);
   if (!key || !printerId) return Response.json({ error: 'Credenciais de telemetria inválidas.' }, { status: 401 });
-  const rows = await selectRows<(RowDataPacket & { worker_key_hash: string | null })[]>('SELECT worker_key_hash FROM commerce_printers WHERE id=? LIMIT 1', [printerId]);
+  const rows = await selectRows<(RowDataPacket & { worker_key_hash: string | null; account_id: string; current_file: string | null; name: string })[]>('SELECT worker_key_hash,account_id,current_file,name FROM commerce_printers WHERE id=? LIMIT 1', [printerId]);
   if (!rows[0]?.worker_key_hash || hash(key) !== rows[0].worker_key_hash) return Response.json({ error: 'Chave do worker inválida ou desatualizada. Gere uma nova chave no Centro de impressoras e atualize o .env local.' }, { status: 401 });
   const status = ['offline', 'idle', 'printing', 'paused', 'error'].includes(clean(body?.status, 16)) ? clean(body?.status, 16) : 'offline';
   const currentFile = clean(body?.currentFile, 255) || null; const progress = num(body?.progressPercent); const updates: CustomerUpdate[] = [];
+  const newPrint = status === 'printing' && currentFile && fileName(currentFile) !== fileName(rows[0].current_file);
   await transaction(async (connection) => {
     await connection.execute('UPDATE commerce_printers SET status=?,current_file=?,progress_percent=?,nozzle_temperature=?,bed_temperature=?,last_error=?,last_seen_at=UTC_TIMESTAMP(3) WHERE id=?', [status, currentFile, progress, num(body?.nozzleTemperature), num(body?.bedTemperature), clean(body?.lastError, 2000) || null, printerId]);
     const [jobs] = await connection.execute<(RowDataPacket & { id: string; status: string; order_id: string | null; order_number: number | null; customer_email: string | null; customer_name: string | null; order_status: string | null; internal_files: string | null })[]>(`SELECT j.id,j.status,j.order_id,o.order_number,o.customer_email,o.customer_name,o.status AS order_status,GROUP_CONCAT(f.original_name SEPARATOR '|') AS internal_files
@@ -45,5 +47,6 @@ export async function POST(request: Request) {
     }
   });
   await Promise.all(updates.map(update => sendOrderUpdateEmail({ ...update, kind: 'status' })));
+  if (newPrint) await notifyAccountEvent({ accountId: rows[0].account_id, type: 'printer_new_file', category: 'system', priority: 'normal', title: `Nova impressão · ${rows[0].name}`, body: `A impressora iniciou “${currentFile}”. Esta impressão pertence a alguma encomenda?`, actionUrl: '/commerce/oficina', dedupeKey: `printer-new-file:${printerId}:${fileName(currentFile)}`, metadata: { printerId, currentFile }, whatsappText: `POPForge: a impressora ${rows[0].name} iniciou “${currentFile}”. Esta impressão pertence a alguma encomenda?` });
   return Response.json({ success: true, notified: updates.length > 0 });
 }
