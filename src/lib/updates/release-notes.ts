@@ -1,5 +1,6 @@
 /** Notas de versão apresentadas nas definições do CRM. */
 export const releaseNotes = [
+  {date:'2026-11-25',areas:['Impressoras'],title:'Gestão completa de Workers e pedidos',description:'Adicionados botões para gerar chave do Worker e associar pedidos de produção a cada impressora.',usage:'Em Impressoras, use Gerar chave ou Associar pedido.'},
   { date: '2026-11-25', areas: ['Impressoras', 'Produção'], title: 'Estado dos Workers e fila visíveis', description: 'O Centro de impressoras atualiza o estado real, progresso, último contacto, erros e trabalhos pendentes automaticamente.', usage: 'Abra Impressoras; os dados são atualizados a cada 10 segundos.' },
   {
     date: '2026-11-13',
