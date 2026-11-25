@@ -8,3 +8,5 @@ out
 .DS_Store
 .tools/
 /tmp/
+scripts/worker-i7/.env
+scripts/worker-k2/.env
